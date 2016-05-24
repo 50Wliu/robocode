@@ -234,11 +234,6 @@ public class BobTheBuilder extends AdvancedRobot
 			}
 			case MODE_TRACK:
 			{
-				if(enemy.none())
-				{
-					return;
-				}
-
 				setTurnRight(enemy.getBearing());
 
 				if(Math.abs(getTurnRemaining()) < 10)
