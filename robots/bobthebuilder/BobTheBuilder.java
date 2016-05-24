@@ -16,7 +16,8 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		MODE_ENCIRCLE,
 		MODE_STRAFE,
-		MODE_TRACK
+		MODE_TRACK,
+		MODE_RAM
 	}
 
 	private RobotModes mode = RobotModes.MODE_STRAFE;
@@ -104,7 +105,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void OnHitRobot(HitRobotEvent e)
 	{
-		if(mode == RobotModes.MODE_TRACK && e.getEnergy() < getEnergy())
+		if(mode == RobotModes.MODE_RAM)
 		{
 			setTurnRight(e.getBearing());
 			setTurnGunRight(e.getBearing());
@@ -236,19 +237,33 @@ public class BobTheBuilder extends AdvancedRobot
 				}
 
 				setTurnRight(enemy.getBearing());
-				setTurnRadarRight(getHeading() - getRadarHeading() + enemy.getBearing());
 
 				if(Math.abs(getTurnRemaining()) < 10)
 				{
 					if(enemy.getEnergy() < getEnergy())
 					{
 						// We have the advantage; ram them for extra points!
+						mode = RobotModes.MODE_RAM;
 						setAhead(enemy.getDistance() + 5);
 					}
 					else
 					{
 						setAhead(enemy.getDistance() - 50);
 					}
+				}
+				break;
+			}
+			case MODE_RAM:
+			{
+				if(enemy.getEnergy() < getEnergy())
+				{
+					setTurnRight(enemy.getBearing());
+					setAhead(enemy.getDistance() + 5);
+				}
+				else // Ruh roh
+				{
+					mode = RobotModes.MODE_TRACK;
+					setAhead(enemy.getDistance() - 50);
 				}
 				break;
 			}
