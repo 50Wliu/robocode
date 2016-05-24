@@ -1,6 +1,7 @@
-# Ignore everything except .gitignore
+# Ignore everything except .gitignore and Makefile
 /*
 !.gitignore
+!Makefile
 
 # And the robots folder
 !robots/
