@@ -12,6 +12,8 @@ public class BobTheBuilder extends AdvancedRobot
 	private boolean tooCloseToWall = false;
 	private boolean wallMovementHandled = false;
 
+	private final String VERSION = "0.0.1";
+
 	private enum RobotModes
 	{
 		MODE_ENCIRCLE,
@@ -71,6 +73,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 		while(true)
 		{
+			setDebugProperty("version", VERSION);
 			setDebugProperty("mode", mode.toString());
 			doScanner();
 			doMovement();
@@ -81,10 +84,12 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void onScannedRobot(ScannedRobotEvent e)
 	{
-		if(enemy.none() ||
-		   e.getDistance() < enemy.getDistance() - 70 ||
-		   e.getName().equals(enemy.getName()))
+		if(enemy.none() // No enemy
+		|| (e.getEnergy() < enemy.getEnergy() && e.getDistance() < enemy.getDistance()) // New robot has less life than the current enemy and is closer
+		|| e.getDistance() < enemy.getDistance() - 70 // New robot is closer than current enemy
+		|| e.getName().equals(enemy.getName())) // New robot is the current enemy
 		{
+			setDebugProperty("enemy", e.getName());
 			enemy.update(e, this);
 		}
 	}
