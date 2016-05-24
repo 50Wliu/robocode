@@ -71,6 +71,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 		while(true)
 		{
+			setDebugProperty("mode", mode.toString());
 			doScanner();
 			doMovement();
 			doGun();
@@ -162,10 +163,12 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		if(e.getCondition().getName().equals("there's_an_obstacle_ahead"))
 		{
+			setDebugProperty("wall", "true");
 			tooCloseToWall = true;
 		}
 		else if(e.getCondition().getName().equals("safe"))
 		{
+			setDebugProperty("wall", "false");
 			tooCloseToWall = false;
 			wallMovementHandled = false;
 		}
@@ -196,7 +199,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 				if(!tooCloseToWall)
 				{
-					if(ThreadLocalRandom.current().nextInt(0, 21) == 20)
+					if(ThreadLocalRandom.current().nextInt(0, 51) == 50)
 					{
 						moveDirection *= -1;
 					}
@@ -221,11 +224,11 @@ public class BobTheBuilder extends AdvancedRobot
 				if(!tooCloseToWall)
 				{
 					// Strafe rather randomly
-					if(ThreadLocalRandom.current().nextInt(0, 21) == 20)
+					if(ThreadLocalRandom.current().nextInt(0, 51) == 50)
 					{
 						moveDirection *= -1;
-						setAhead(1000 * moveDirection);
 					}
+					setAhead(1000 * moveDirection);
 				}
 				break;
 			}
