@@ -12,7 +12,7 @@ public class BobTheBuilder extends AdvancedRobot
 	private boolean tooCloseToWall = false;
 	private boolean wallMovementHandled = false;
 
-	private final String VERSION = "0.0.1";
+	private final String VERSION = "0.0.3";
 
 	private enum RobotModes
 	{
@@ -91,6 +91,10 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			setDebugProperty("enemy", e.getName());
 			enemy.update(e, this);
+			if(mode == RobotModes.MODE_TRACK || mode == RobotModes.MODE_RAM)
+			{
+				setTurnRight(enemy.getBearing());
+			}
 		}
 	}
 
@@ -114,7 +118,11 @@ public class BobTheBuilder extends AdvancedRobot
 		if(mode == RobotModes.MODE_RAM)
 		{
 			setTurnRight(e.getBearing());
-			setTurnGunRight(e.getBearing());
+
+			int time = (int)(enemy.getDistance() / (20 - 3 * 3));
+			double absoluteDegree = absoluteBearing(getX(), getY(), enemy.getFutureX(time), enemy.getFutureY(time));
+
+			setTurnGunRight(normalizeBearing(absoluteDegree - getGunHeading()));
 
 			if(getGunHeat() == 0 && getGunTurnRemaining() < 10)
 			{
@@ -239,20 +247,15 @@ public class BobTheBuilder extends AdvancedRobot
 			}
 			case MODE_TRACK:
 			{
-				setTurnRight(enemy.getBearing());
-
-				if(Math.abs(getTurnRemaining()) < 10)
+				if(enemy.getEnergy() < getEnergy())
 				{
-					if(enemy.getEnergy() < getEnergy())
-					{
-						// We have the advantage; ram them for extra points!
-						mode = RobotModes.MODE_RAM;
-						setAhead(enemy.getDistance() + 5);
-					}
-					else
-					{
-						setAhead(enemy.getDistance() - 50);
-					}
+					// We have the advantage; ram them for extra points!
+					mode = RobotModes.MODE_RAM;
+					setAhead(enemy.getDistance() + 5);
+				}
+				else
+				{
+					setAhead(enemy.getDistance() - 50);
 				}
 				break;
 			}
@@ -260,7 +263,6 @@ public class BobTheBuilder extends AdvancedRobot
 			{
 				if(enemy.getEnergy() < getEnergy())
 				{
-					setTurnRight(enemy.getBearing());
 					setAhead(enemy.getDistance() + 5);
 				}
 				else // Ruh roh
