@@ -1,7 +1,6 @@
 package bobthebuilder;
 
 import robocode.*;
-import java.text.NumberFormat;
 
 public class AdvancedEnemyBot extends EnemyBot
 {

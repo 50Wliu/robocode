@@ -9,7 +9,8 @@ public class BobTheBuilder extends AdvancedRobot
 	private AdvancedEnemyBot enemy = new AdvancedEnemyBot();
 	private int moveDirection = 1;
 	private int wallMargin = 50;
-	private int tooCloseToWall = 0;
+	private boolean tooCloseToWall = false;
+	private boolean wallMovementHandled = false;
 
 	private enum RobotModes
 	{
@@ -23,6 +24,7 @@ public class BobTheBuilder extends AdvancedRobot
 	public void run()
 	{
 		setColors(Color.blue, Color.blue, Color.yellow);
+		setBulletColor(Color.yellow);
 		setAdjustRadarForGunTurn(true);
 		setAdjustGunForRobotTurn(true);
 		enemy.reset();
@@ -44,11 +46,24 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			public boolean test()
 			{
-				return (
+				return !tooCloseToWall && (
 					getX() <= wallMargin ||
 					getX() >= getBattleFieldWidth() - wallMargin ||
 					getY() <= wallMargin ||
 					getY() >= getBattleFieldHeight() - wallMargin
+				);
+			}
+		});
+
+		addCustomEvent(new Condition("safe")
+		{
+			public boolean test()
+			{
+				return (
+					getX() > wallMargin * 1.5 &&
+					getX() < getBattleFieldWidth() - (wallMargin * 1.5) &&
+					getY() > wallMargin * 1.5 &&
+					getY() < getBattleFieldHeight() - (wallMargin * 1.5)
 				);
 			}
 		});
@@ -75,16 +90,50 @@ public class BobTheBuilder extends AdvancedRobot
 	public void onHitByBullet(HitByBulletEvent e)
 	{
 		//Stop wherever we're going and BACK UP
-		moveDirection *= -1;
-		setAhead(10000 * moveDirection);
+		// moveDirection *= -1;
+		// setAhead(10000 * moveDirection);
 	}
 
 	public void onHitWall(HitWallEvent e)
 	{
 		//Go the other direction
 		System.out.println("Wall hit at (" + getX() + ", " + getY() + "); bearing was " + e.getBearing() + "degrees");
-		tooCloseToWall += wallMargin;
-		setMaxVelocity(0);
+		tooCloseToWall = true;
+		wallMovementHandled = false;
+	}
+
+	public void OnHitRobot(HitRobotEvent e)
+	{
+		if(mode == RobotModes.MODE_TRACK && e.getEnergy() < getEnergy())
+		{
+			setTurnRight(e.getBearing());
+			setTurnGunRight(e.getBearing());
+
+			if(getGunHeat() == 0 && getGunTurnRemaining() < 10)
+			{
+				if(e.getEnergy() > 16)
+				{
+					setFire(3);
+				}
+				else if(e.getEnergy() > 10)
+				{
+					setFire(2);
+				}
+				else if(e.getEnergy() > 4)
+				{
+					setFire(1);
+				}
+				else if(e.getEnergy() > 0.5)
+				{
+					setFire(0.5);
+				}
+				else if(e.getEnergy() > 0.4)
+				{
+					setFire(0.1);
+				}
+			}
+			setAhead(40);
+		}
 	}
 
 	public void onRobotDeath(RobotDeathEvent e)
@@ -112,11 +161,12 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		if(e.getCondition().getName().equals("there's_an_obstacle_ahead"))
 		{
-			if(tooCloseToWall <= 0)
-			{
-				tooCloseToWall += wallMargin;
-				setMaxVelocity(0);
-			}
+			tooCloseToWall = true;
+		}
+		else if(e.getCondition().getName().equals("safe"))
+		{
+			tooCloseToWall = false;
+			wallMovementHandled = false;
 		}
 	}
 
@@ -131,62 +181,58 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			case MODE_ENCIRCLE:
 			{
-				if(tooCloseToWall > 0)
+				if(tooCloseToWall)
 				{
-					tooCloseToWall--;
-				}
-
-				if(getVelocity() == 0)
-				{
-					setMaxVelocity(8);
-					moveDirection *= -1;
+					if(!wallMovementHandled)
+					{
+						moveDirection *= -1;
+						wallMovementHandled = true;
+					}
+					setAhead(wallMargin * moveDirection);
 				}
 
 				setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
-				if(ThreadLocalRandom.current().nextInt(0, 101) % 20 == 0)
-				{
-					moveDirection *= -1;
-				}
 
-				setAhead(1000 * moveDirection);
+				if(!tooCloseToWall)
+				{
+					if(ThreadLocalRandom.current().nextInt(0, 21) == 20)
+					{
+						moveDirection *= -1;
+					}
+					setAhead(1000 * moveDirection);
+				}
 				break;
 			}
 			case MODE_STRAFE:
 			{
-				if(tooCloseToWall > 0)
+				if(tooCloseToWall)
 				{
-					tooCloseToWall--;
-				}
-
-				if(getVelocity() == 0)
-				{
-					setMaxVelocity(8);
-					moveDirection *= -1;
-					setAhead(10000 * moveDirection);
+					if(!wallMovementHandled)
+					{
+						moveDirection *= -1;
+						wallMovementHandled = true;
+					}
+					setAhead(wallMargin * moveDirection);
 				}
 
 				setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
 
-				// Strafe rather randomly
-				if(ThreadLocalRandom.current().nextInt(0, 1001) % 20 == 0)
+				if(!tooCloseToWall)
 				{
-					moveDirection *= -1;
-					setAhead(150 * moveDirection);
+					// Strafe rather randomly
+					if(ThreadLocalRandom.current().nextInt(0, 21) == 20)
+					{
+						moveDirection *= -1;
+						setAhead(1000 * moveDirection);
+					}
 				}
 				break;
 			}
 			case MODE_TRACK:
 			{
-				if(tooCloseToWall > 0)
+				if(enemy.none())
 				{
-					tooCloseToWall--;
-				}
-
-				if(getVelocity() == 0)
-				{
-					setMaxVelocity(8);
-					moveDirection *= -1;
-					setAhead(10000 * moveDirection);
+					return;
 				}
 
 				setTurnRight(enemy.getBearing());
@@ -194,14 +240,14 @@ public class BobTheBuilder extends AdvancedRobot
 
 				if(Math.abs(getTurnRemaining()) < 10)
 				{
-					if(enemy.getDistance() > 200)
+					if(enemy.getEnergy() < getEnergy())
 					{
-						setAhead(enemy.getDistance() / 2);
+						// We have the advantage; ram them for extra points!
+						setAhead(enemy.getDistance() + 5);
 					}
-
-					if(enemy.getDistance() < 100)
+					else
 					{
-						setBack(enemy.getDistance() * 2);
+						setAhead(enemy.getDistance() - 50);
 					}
 				}
 				break;
