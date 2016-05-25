@@ -306,23 +306,23 @@ public class BobTheBuilder extends AdvancedRobot
 			if(getGunHeat() == 0 && getGunTurnRemaining() < 10)
 			{
 				// We get extra points if we kill them by ramming
-				if(e.getEnergy() > 16)
+				if(enemy.getEnergy() > 16)
 				{
 					setFire(3);
 				}
-				else if(e.getEnergy() > 10)
+				else if(enemy.getEnergy() > 10)
 				{
 					setFire(2);
 				}
-				else if(e.getEnergy() > 4)
+				else if(enemy.getEnergy() > 4)
 				{
 					setFire(1);
 				}
-				else if(e.getEnergy() > 0.5)
+				else if(enemy.getEnergy() > 0.5)
 				{
 					setFire(0.5);
 				}
-				else if(e.getEnergy() > 0.4)
+				else if(enemy.getEnergy() > 0.4)
 				{
 					setFire(0.1);
 				}
