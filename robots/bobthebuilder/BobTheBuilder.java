@@ -13,7 +13,7 @@ public class BobTheBuilder extends AdvancedRobot
 	private boolean wallMovementHandled = false;
 	private boolean hitRobot = false;
 
-	private final String VERSION = "0.0.5";
+	private final String VERSION = "0.0.6";
 
 	private enum RobotModes
 	{
@@ -117,6 +117,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void onHitRobot(HitRobotEvent e)
 	{
+		hitRobot = true;
 		if(mode != RobotModes.MODE_RAM)
 		{
 			// Move "backwards" a bit so that we don't get stuck
@@ -130,40 +131,10 @@ public class BobTheBuilder extends AdvancedRobot
 			{
 				setAhead(100);
 			}
-			hitRobot = true;
 		}
 		else // Ram them!
 		{
 			setTurnRight(e.getBearing());
-
-			int time = (int)(enemy.getDistance() / (20 - 3 * 3));
-			double absoluteDegree = absoluteBearing(getX(), getY(), enemy.getFutureX(time), enemy.getFutureY(time));
-
-			setTurnGunRight(normalizeBearing(absoluteDegree - getGunHeading()));
-
-			if(getGunHeat() == 0 && getGunTurnRemaining() < 10)
-			{
-				if(e.getEnergy() > 16)
-				{
-					setFire(3);
-				}
-				else if(e.getEnergy() > 10)
-				{
-					setFire(2);
-				}
-				else if(e.getEnergy() > 4)
-				{
-					setFire(1);
-				}
-				else if(e.getEnergy() > 0.5)
-				{
-					setFire(0.5);
-				}
-				else if(e.getEnergy() > 0.4)
-				{
-					setFire(0.1);
-				}
-			}
 			setAhead(40);
 		}
 	}
@@ -326,6 +297,36 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		if(enemy.none())
 		{
+			return;
+		}
+		
+		if(mode == RobotModes.MODE_RAM && hitRobot)
+		{
+			setTurnGunRight(normalizeBearing(getHeading() - getGunHeading() + enemy.getBearing()));
+			if(getGunHeat() == 0 && getGunTurnRemaining() < 10)
+			{
+				// We get extra points if we kill them by ramming
+				if(e.getEnergy() > 16)
+				{
+					setFire(3);
+				}
+				else if(e.getEnergy() > 10)
+				{
+					setFire(2);
+				}
+				else if(e.getEnergy() > 4)
+				{
+					setFire(1);
+				}
+				else if(e.getEnergy() > 0.5)
+				{
+					setFire(0.5);
+				}
+				else if(e.getEnergy() > 0.4)
+				{
+					setFire(0.1);
+				}
+			}
 			return;
 		}
 
