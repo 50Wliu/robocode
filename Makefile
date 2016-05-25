@@ -36,7 +36,7 @@ test: rc/robots/BobTheBuilder.jar rc/libs/robocode.jar
 		-recordxml tests/B$(time).xml -results tests/R$(time).txt
 	echo " == Results /battles/test1.battle $(time)  == " && \
 		cat tests/R$(time).txt
-	awk 'BEGIN {FS=" "};NR==3{print $2}' tests/R$(time).txt | \
+	awk 'BEGIN {FS=" "};NR==3{print $$2}' tests/R$(time).txt | \
 		grep -q "bobthebuilder.BobTheBuilder"
 
 practicegui: rc/libs/robocode.jar rc/robots/BobTheBuilder.jar
