@@ -2,23 +2,46 @@
 # BobTheBuilder Makefile
 #
 
-practice: rc/META-INF/MANIFEST.MF BobTheBuilder.jar
+ROBO = java -Xmx512M -cp rc/libs/robocode.jar robocode.Robocode -cwd rc/
+
+time := $(shell /bin/date +%s)
+
+BobTheBuilder.jar: bobthebuilder/*.java bobthebuilder/manifest.txt bobthebuilder/*.properties rc/libs/robocode.jar
+	javac -cp rc/libs/robocode.jar bobthebuilder/*.java
+	jar -cfm BobTheBuilder.jar bobthebuilder/manifest.txt bobthebuilder/
+
+rc/robots/BobTheBuilder.jar: BobTheBuilder.jar
 	cp BobTheBuilder.jar rc/robots/BobTheBuilder.jar
-	java -Xmx512M -cp rc/libs/robocode.jar robocode.Robocode -cwd rc/
 
-BobTheBuilder.jar: robots/bobthebuilder/*.java robots/bobthebuilder/BobTheBuilder.properties robots/bobthebuilder/manifest.txt rc/libs/robocode.jar
-	javac -cp rc/libs/robocode.jar robots/bobthebuilder/*.java
-	jar -cfm BobTheBuilder.jar robots/bobthebuilder/manifest.txt -C robots/ .
-
-depends: # May not work on Windows
+depends:
+	mkdir -p rc/
 	wget http://iweb.dl.sourceforge.net/project/robocode/robocode/1.9.2.5/robocode-1.9.2.5-setup.jar \
-		-O rc.jar
-	sha256sum rc.jar | grep -q 4a899ed17718ee6511cf78e94ed3a9b247271d0d324aa9b154da32aadf0a59b8
-	unzip -d rc/ rc.jar
+		-O rc/rc.jar
+	sha256sum rc/rc.jar | grep -q 4a899ed17718ee6511cf78e94ed3a9b247271d0d324aa9b154da32aadf0a59b8
+	unzip -d rc/ rc/rc.jar
+
 cleandepends:
-	rm -r rc.jar rc/
+	rm -rf rc/
+	rm -rf config/
+cleanbattles:
+	rm -rf tests/
 clean:
-	rm robots/bobthebuilder/*.class
+	rm -f bobthebuilder/*.class
+	rm -f BobTheBuilder.jar
+cleanall: cleandepends cleanbattles clean
+
+test: rc/robots/BobTheBuilder.jar rc/libs/robocode.jar
+	mkdir -p tests/
+	$(ROBO) -nodisplay -battle battles/test1.battle \
+		-recordxml tests/B$(time).xml -results tests/R$(time).txt
+	echo " == Results /battles/test1.battle $(time)  == " && \
+		cat tests/R$(time).txt
+	awk 'BEGIN {FS=" "};NR==3{print $2}' tests/R$(time).txt | \
+		grep -q "bobthebuilder.BobTheBuilder"
+
+practicegui: rc/libs/robocode.jar rc/robots/BobTheBuilder.jar
+	cp BobTheBuilder.jar rc/robots/BobTheBuilder.jar
+	$(ROBO)
 
 build: BobTheBuilder.jar
 

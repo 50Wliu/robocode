@@ -1,16 +1,6 @@
-# Ignore everything except .gitignore and Makefile
-/*
-!.gitignore
-!Makefile
+config/
+rc/
+tests/
 
-# And the robots folder
-!robots/
-
-# But ignore everything inside that
-robots/*
-
-# Except the bobthebuilder folder
-!robots/bobthebuilder/
-
-# Still want to ignore annoying .class files though
-robots/bobthebuilder/*.class
+bobthebuilder/*.class
+*.jar

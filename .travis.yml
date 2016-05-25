@@ -1,3 +1,3 @@
 dist: trusty
 
-script: make depends && make build
+script: make depends && make build && make test
