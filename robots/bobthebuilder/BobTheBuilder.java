@@ -17,7 +17,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 	private enum RobotModes
 	{
-		MODE_ENCIRCLE,
+		// MODE_ENCIRCLE,
 		MODE_STRAFE,
 		MODE_TRACK,
 		MODE_RAM
@@ -33,11 +33,11 @@ public class BobTheBuilder extends AdvancedRobot
 		setAdjustGunForRobotTurn(true);
 		enemy.reset();
 
-		if(getOthers() >= 10)
-		{
-			mode = RobotModes.MODE_ENCIRCLE;
-		}
-		else if(getOthers() > 1)
+		// if(getOthers() >= 10)
+		// {
+		// 	mode = RobotModes.MODE_ENCIRCLE;
+		// }
+		/* else */if(getOthers() > 1)
 		{
 			mode = RobotModes.MODE_STRAFE;
 		}
@@ -175,11 +175,11 @@ public class BobTheBuilder extends AdvancedRobot
 			enemy.reset();
 		}
 
-		if(getOthers() >= 10)
-		{
-			mode = RobotModes.MODE_ENCIRCLE;
-		}
-		else if(getOthers() > 1)
+		// if(getOthers() >= 10)
+		// {
+		// 	mode = RobotModes.MODE_ENCIRCLE;
+		// }
+		/* else */if(getOthers() > 1)
 		{
 			mode = RobotModes.MODE_STRAFE;
 		}
@@ -218,7 +218,7 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		switch(mode)
 		{
-			case MODE_ENCIRCLE:
+			/*case MODE_ENCIRCLE:
 			{
 				if(tooCloseToWall)
 				{
@@ -253,7 +253,7 @@ public class BobTheBuilder extends AdvancedRobot
 					setAhead(1000 * moveDirection);
 				}
 				break;
-			}
+			}*/
 			case MODE_STRAFE:
 			{
 				if(tooCloseToWall)
