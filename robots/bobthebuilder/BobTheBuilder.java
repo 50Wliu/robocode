@@ -11,8 +11,9 @@ public class BobTheBuilder extends AdvancedRobot
 	private int wallMargin = 50;
 	private boolean tooCloseToWall = false;
 	private boolean wallMovementHandled = false;
+	private boolean hitRobot = false;
 
-	private final String VERSION = "0.0.3";
+	private final String VERSION = "0.0.4";
 
 	private enum RobotModes
 	{
@@ -113,9 +114,24 @@ public class BobTheBuilder extends AdvancedRobot
 		wallMovementHandled = false;
 	}
 
-	public void OnHitRobot(HitRobotEvent e)
+	public void onHitRobot(HitRobotEvent e)
 	{
-		if(mode == RobotModes.MODE_RAM)
+		if(mode != RobotModes.MODE_RAM)
+		{
+			// Move "backwards" a bit so that we don't get stuck
+			// FIXME: There are situations where we still get stuck and aren't able to move back, which usually leads to death
+			System.out.println("Hit robot (at fault: " + e.isMyFault() + "): bearing is " + e.getBearing());
+			if(e.getBearing() > -90 && e.getBearing() <= 90)
+			{
+				setBack(100);
+			}
+			else
+			{
+				setAhead(100);
+			}
+			hitRobot = true;
+		}
+		else // Ram them!
 		{
 			setTurnRight(e.getBearing());
 
@@ -208,6 +224,18 @@ public class BobTheBuilder extends AdvancedRobot
 					setAhead(wallMargin * moveDirection);
 				}
 
+				if(hitRobot)
+				{
+					if(getDistanceRemaining() <= 0)
+					{
+						hitRobot = false;
+					}
+					else
+					{
+						return;
+					}
+				}
+
 				setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
 
 				if(!tooCloseToWall)
@@ -230,6 +258,18 @@ public class BobTheBuilder extends AdvancedRobot
 						wallMovementHandled = true;
 					}
 					setAhead(wallMargin * moveDirection);
+				}
+
+				if(hitRobot)
+				{
+					if(getDistanceRemaining() <= 0)
+					{
+						hitRobot = false;
+					}
+					else
+					{
+						return;
+					}
 				}
 
 				setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
@@ -275,6 +315,7 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 	}
 
+	// FIXME: This occasionally points the gun straight up in MODE_TRACK or MODE_RAM instead of at the enemy
 	public void doGun()
 	{
 		if(enemy.none())
