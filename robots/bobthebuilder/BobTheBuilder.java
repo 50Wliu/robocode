@@ -13,7 +13,7 @@ public class BobTheBuilder extends AdvancedRobot
 	private boolean wallMovementHandled = false;
 	private boolean hitRobot = false;
 
-	private final String VERSION = "0.0.4";
+	private final String VERSION = "0.0.5";
 
 	private enum RobotModes
 	{
@@ -86,8 +86,9 @@ public class BobTheBuilder extends AdvancedRobot
 	public void onScannedRobot(ScannedRobotEvent e)
 	{
 		if(enemy.none() // No enemy
+		|| e.getEnergy() <= 0 // Enemy is disabled
 		|| (e.getEnergy() < enemy.getEnergy() && e.getDistance() < enemy.getDistance()) // New robot has less life than the current enemy and is closer
-		|| e.getDistance() < enemy.getDistance() - 70 // New robot is closer than current enemy
+		|| e.getDistance() < enemy.getDistance() - 70 // New robot is a lot closer than current enemy
 		|| e.getName().equals(enemy.getName())) // New robot is the current enemy
 		{
 			setDebugProperty("enemy", e.getName());
@@ -182,9 +183,14 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			mode = RobotModes.MODE_STRAFE;
 		}
-		else
+		else if(getOthers() == 1)
 		{
 			mode = RobotModes.MODE_TRACK;
+		}
+		else // Victory!
+		{
+			setMaxVelocity(0);
+			setTurnGunRight(360 * 5);
 		}
 	}
 
@@ -226,7 +232,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 				if(hitRobot)
 				{
-					if(getDistanceRemaining() <= 0)
+					if(getDistanceRemaining() == 0)
 					{
 						hitRobot = false;
 					}
@@ -262,7 +268,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 				if(hitRobot)
 				{
-					if(getDistanceRemaining() <= 0)
+					if(getDistanceRemaining() == 0)
 					{
 						hitRobot = false;
 					}
