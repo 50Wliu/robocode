@@ -13,7 +13,7 @@ public class BobTheBuilder extends AdvancedRobot
 	private boolean wallMovementHandled = false;
 	private boolean hitRobot = false;
 
-	private final String VERSION = "0.0.6";
+	private final String VERSION = "0.0.7";
 
 	private enum RobotModes
 	{
@@ -121,8 +121,6 @@ public class BobTheBuilder extends AdvancedRobot
 		if(mode != RobotModes.MODE_RAM)
 		{
 			// Move "backwards" a bit so that we don't get stuck
-			// FIXME: There are situations where we still get stuck and aren't able to move back, which usually leads to death
-			System.out.println("Hit robot (at fault: " + e.isMyFault() + "): bearing is " + e.getBearing());
 			if(e.getBearing() > -90 && e.getBearing() <= 90)
 			{
 				setBack(100);
@@ -227,16 +225,6 @@ public class BobTheBuilder extends AdvancedRobot
 			}*/
 			case MODE_STRAFE:
 			{
-				if(tooCloseToWall)
-				{
-					if(!wallMovementHandled)
-					{
-						moveDirection *= -1;
-						wallMovementHandled = true;
-					}
-					setAhead(wallMargin * moveDirection);
-				}
-
 				if(hitRobot)
 				{
 					if(getDistanceRemaining() == 0)
@@ -247,6 +235,16 @@ public class BobTheBuilder extends AdvancedRobot
 					{
 						return;
 					}
+				}
+
+				if(tooCloseToWall)
+				{
+					if(!wallMovementHandled)
+					{
+						moveDirection *= -1;
+						wallMovementHandled = true;
+					}
+					setAhead(wallMargin * moveDirection);
 				}
 
 				setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
@@ -299,7 +297,7 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			return;
 		}
-		
+
 		if(mode == RobotModes.MODE_RAM && hitRobot)
 		{
 			setTurnGunRight(normalizeBearing(getHeading() - getGunHeading() + enemy.getBearing()));
