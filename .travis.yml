@@ -1,3 +1,6 @@
 dist: trusty
 
 script: make depends && make build && make test
+
+notifications:
+    email: false
