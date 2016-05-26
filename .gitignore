@@ -1,6 +1,6 @@
-config/
-rc/
-tests/
-
-bobthebuilder/*.class
+*/
+robot.database
 *.jar
+
+!bobthebuilder/
+bobthebuilder/*.class
