@@ -86,7 +86,16 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void onHitWall(HitWallEvent e)
 	{
-		System.out.println("Wall hit at (" + getX() + ", " + getY() + "); bearing was " + e.getBearing() + "degrees");
+		System.out.println("Wall hit at (" + getX() + ", " + getY() + "); bearing was " + e.getBearing() + " degrees");
+		// Move immediately so that we don't generate more HitWallEvents while turning
+		if(e.getBearing() > - 90 && e.getBearing() <= 90)
+		{
+			back(10);
+		}
+		else
+		{
+			ahead(10);
+		}
 		tooCloseToWall = true;
 	}
 
@@ -96,14 +105,12 @@ public class BobTheBuilder extends AdvancedRobot
 		if(mode != RobotModes.MODE_RAM)
 		{
 			// Move "backwards" a bit so that we don't get stuck
-			if(e.getBearing() > -90 && e.getBearing() <= 90)
+			// TODO: Calculate the bearing to the wall even if we haven't hit a wall
+			if(tooCloseToWall && !getHitWallEvents().isEmpty())
 			{
-				setBack(100);
+				turnRight((getHitWallEvents().lastElement().getBearing() + e.getBearing()) / 2);
 			}
-			else
-			{
-				setAhead(100);
-			}
+			setAhead(e.getBearing() > - 90 && e.getBearing() <= 90 ? -100 : 100);
 		}
 		else // Ram them!
 		{
@@ -261,8 +268,6 @@ public class BobTheBuilder extends AdvancedRobot
 						double absoluteBearingToCenter = absoluteBearing(getX(), getY(), getBattleFieldWidth() / 2, getBattleFieldHeight() / 2);
 						double turn = absoluteBearingToCenter - getHeading();
 						setTurnRight(normalizeBearing(turn));
-						waitFor(new TurnCompleteCondition(this));
-
 						setAhead(100);
 						return;
 					}
