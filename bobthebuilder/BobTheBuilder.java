@@ -12,11 +12,10 @@ public class BobTheBuilder extends AdvancedRobot
 	private int moveDirection = 1;
 	private int wallMargin = 50;
 	private boolean tooCloseToWall = false;
-	private boolean wallMovementHandled = false;
 	private boolean hitRobot = false;
 	private boolean lockMode = false;
 
-	private final String VERSION = "0.0.9";
+	private final String VERSION = "0.0.10";
 
 	private enum RobotModes
 	{
@@ -37,19 +36,6 @@ public class BobTheBuilder extends AdvancedRobot
 		setAdjustGunForRobotTurn(true);
 		enemy.reset();
 
-		// if(getOthers() >= 10)
-		// {
-		// 	mode = RobotModes.MODE_ENCIRCLE;
-		// }
-		/* else */if(getOthers() > 1)
-		{
-			mode = RobotModes.MODE_STRAFE;
-		}
-		else
-		{
-			mode = RobotModes.MODE_TRACK;
-		}
-
 		addCustomEvent(new Condition("there's_an_obstacle_ahead")
 		{
 			public boolean test()
@@ -59,19 +45,6 @@ public class BobTheBuilder extends AdvancedRobot
 					getX() >= getBattleFieldWidth() - wallMargin ||
 					getY() <= wallMargin ||
 					getY() >= getBattleFieldHeight() - wallMargin
-				);
-			}
-		});
-
-		addCustomEvent(new Condition("safe")
-		{
-			public boolean test()
-			{
-				return (
-					getX() > wallMargin * 1.5 &&
-					getX() < getBattleFieldWidth() - (wallMargin * 1.5) &&
-					getY() > wallMargin * 1.5 &&
-					getY() < getBattleFieldHeight() - (wallMargin * 1.5)
 				);
 			}
 		});
@@ -113,10 +86,8 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void onHitWall(HitWallEvent e)
 	{
-		//Go the other direction
 		System.out.println("Wall hit at (" + getX() + ", " + getY() + "); bearing was " + e.getBearing() + "degrees");
 		tooCloseToWall = true;
-		wallMovementHandled = false;
 	}
 
 	public void onHitRobot(HitRobotEvent e)
@@ -145,12 +116,12 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		switch(e.getKeyCode())
 		{
-			case KeyEvent.VK_BACK_QUOTE:
-			{
-				lockMode = true;
-				mode = RobotModes.MODE_MANUAL;
-				break;
-			}
+			// case KeyEvent.VK_BACK_QUOTE:
+			// {
+			// 	lockMode = true;
+			// 	mode = RobotModes.MODE_MANUAL;
+			// 	break;
+			// }
 			case KeyEvent.VK_1:
 			{
 				lockMode = true;
@@ -216,14 +187,7 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		if(e.getCondition().getName().equals("there's_an_obstacle_ahead"))
 		{
-			setDebugProperty("wall", "true");
 			tooCloseToWall = true;
-		}
-		else if(e.getCondition().getName().equals("safe"))
-		{
-			setDebugProperty("wall", "false");
-			tooCloseToWall = false;
-			wallMovementHandled = false;
 		}
 	}
 
@@ -286,27 +250,32 @@ public class BobTheBuilder extends AdvancedRobot
 					}
 				}
 
-				if(tooCloseToWall)
+				if(tooCloseToWall) // Move towards the center of the battlefield
 				{
-					if(!wallMovementHandled)
+					if(getDistanceRemaining() == 0)
 					{
-						moveDirection *= -1;
-						wallMovementHandled = true;
+						tooCloseToWall = false;
 					}
-					setAhead(wallMargin * moveDirection);
+					else
+					{
+						double absoluteBearingToCenter = absoluteBearing(getX(), getY(), getBattleFieldWidth() / 2, getBattleFieldHeight() / 2);
+						double turn = absoluteBearingToCenter - getHeading();
+						setTurnRight(normalizeBearing(turn));
+						waitFor(new TurnCompleteCondition(this));
+
+						setAhead(100);
+						return;
+					}
 				}
 
 				setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
 
-				if(!tooCloseToWall)
+				// Strafe rather randomly
+				if(ThreadLocalRandom.current().nextInt(0, 51) == 50)
 				{
-					// Strafe rather randomly
-					if(ThreadLocalRandom.current().nextInt(0, 51) == 50)
-					{
-						moveDirection *= -1;
-					}
-					setAhead(1000 * moveDirection);
+					moveDirection *= -1;
 				}
+				setAhead(1000 * moveDirection);
 				break;
 			}
 			case MODE_TRACK:
@@ -316,6 +285,11 @@ public class BobTheBuilder extends AdvancedRobot
 					// We have the advantage; ram them for extra points!
 					mode = RobotModes.MODE_RAM;
 					setAhead(enemy.getDistance() + 5);
+				}
+				else if(getEnergy() < 15 && enemy.getEnergy() > 10 && !lockMode)
+				{
+					// Not looking too good for us - go back to random movement
+					mode = RobotModes.MODE_STRAFE;
 				}
 				else
 				{
@@ -329,7 +303,7 @@ public class BobTheBuilder extends AdvancedRobot
 				{
 					setAhead(enemy.getDistance() + 5);
 				}
-				else if(!lockMode)// Ruh roh
+				else if(!lockMode) // Ruh roh
 				{
 					mode = RobotModes.MODE_TRACK;
 					setAhead(enemy.getDistance() - 50);
