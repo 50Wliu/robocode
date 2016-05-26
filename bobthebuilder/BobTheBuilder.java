@@ -2,7 +2,9 @@ package bobthebuilder;
 
 import robocode.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.awt.Color;
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyEvent.*;
 
 public class BobTheBuilder extends AdvancedRobot
 {
@@ -12,15 +14,17 @@ public class BobTheBuilder extends AdvancedRobot
 	private boolean tooCloseToWall = false;
 	private boolean wallMovementHandled = false;
 	private boolean hitRobot = false;
+	private boolean lockMode = false;
 
-	private final String VERSION = "0.0.8";
+	private final String VERSION = "0.0.9";
 
 	private enum RobotModes
 	{
 		// MODE_ENCIRCLE,
 		MODE_STRAFE,
 		MODE_TRACK,
-		MODE_RAM
+		MODE_RAM,
+		MODE_MANUAL
 	}
 
 	private RobotModes mode = RobotModes.MODE_STRAFE;
@@ -137,6 +141,42 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 	}
 
+	public void onKeyPressed(KeyEvent e)
+	{
+		switch(e.getKeyCode())
+		{
+			case KeyEvent.VK_BACK_QUOTE:
+			{
+				lockMode = true;
+				mode = RobotModes.MODE_MANUAL;
+				break;
+			}
+			case KeyEvent.VK_1:
+			{
+				lockMode = true;
+				mode = RobotModes.MODE_STRAFE;
+				break;
+			}
+			case KeyEvent.VK_2:
+			{
+				lockMode = true;
+				mode = RobotModes.MODE_TRACK;
+				break;
+			}
+			case KeyEvent.VK_3:
+			{
+				lockMode = true;
+				mode = RobotModes.MODE_RAM;
+				break;
+			}
+			case KeyEvent.VK_ESCAPE:
+			{
+				lockMode = false;
+				break;
+			}
+		}
+	}
+
 	public void onRobotDeath(RobotDeathEvent e)
 	{
 		if(e.getName().equals(enemy.getName()))
@@ -150,11 +190,17 @@ public class BobTheBuilder extends AdvancedRobot
 		// }
 		/* else */if(getOthers() > 1)
 		{
-			mode = RobotModes.MODE_STRAFE;
+			if(!lockMode)
+			{
+				mode = RobotModes.MODE_STRAFE;
+			}
 		}
 		else if(getOthers() == 1)
 		{
-			mode = RobotModes.MODE_TRACK;
+			if(!lockMode)
+			{
+				mode = RobotModes.MODE_TRACK;
+			}
 		}
 		else // Victory!
 		{
@@ -265,7 +311,7 @@ public class BobTheBuilder extends AdvancedRobot
 			}
 			case MODE_TRACK:
 			{
-				if(enemy.getEnergy() < getEnergy())
+				if(enemy.getEnergy() < getEnergy() && !lockMode)
 				{
 					// We have the advantage; ram them for extra points!
 					mode = RobotModes.MODE_RAM;
@@ -283,7 +329,7 @@ public class BobTheBuilder extends AdvancedRobot
 				{
 					setAhead(enemy.getDistance() + 5);
 				}
-				else // Ruh roh
+				else if(!lockMode)// Ruh roh
 				{
 					mode = RobotModes.MODE_TRACK;
 					setAhead(enemy.getDistance() - 50);
@@ -293,6 +339,7 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 	}
 
+	// FIXME: Predictive targetting isn't accurate at long distances or for spinning enemies
 	public void doGun()
 	{
 		if(enemy.none())
