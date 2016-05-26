@@ -13,7 +13,7 @@ public class BobTheBuilder extends AdvancedRobot
 	private boolean wallMovementHandled = false;
 	private boolean hitRobot = false;
 
-	private final String VERSION = "0.0.7";
+	private final String VERSION = "0.0.8";
 
 	private enum RobotModes
 	{
@@ -159,7 +159,10 @@ public class BobTheBuilder extends AdvancedRobot
 		else // Victory!
 		{
 			setMaxVelocity(0);
-			setTurnGunRight(360 * 5);
+			for(int i = 0; i < 10; i++)
+			{
+				setTurnGunRight(360 * 5);
+			}
 		}
 	}
 
@@ -290,7 +293,6 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 	}
 
-	// FIXME: This occasionally points the gun straight up in MODE_TRACK or MODE_RAM instead of at the enemy
 	public void doGun()
 	{
 		if(enemy.none())
@@ -325,20 +327,21 @@ public class BobTheBuilder extends AdvancedRobot
 					setFire(0.1);
 				}
 			}
-			return;
 		}
-
-		double firePower = Math.min(500 / enemy.getDistance(), 3);
-		double bulletSpeed = 20 - firePower * 3;
-		int time = (int)(enemy.getDistance() / bulletSpeed);
-
-		double absoluteDegree = absoluteBearing(getX(), getY(), enemy.getFutureX(time), enemy.getFutureY(time));
-
-		setTurnGunRight(normalizeBearing(absoluteDegree - getGunHeading()));
-
-		if(getGunHeat() == 0 && Math.abs(getGunTurnRemaining()) < 10)
+		else
 		{
-			setFire(firePower);
+			double firePower = Math.min(500 / enemy.getDistance(), 3);
+			double bulletSpeed = 20 - firePower * 3;
+			int time = (int) Math.ceil((enemy.getDistance() / bulletSpeed));
+
+			double absoluteDegree = absoluteBearing(getX(), getY(), enemy.getFutureX(time), enemy.getFutureY(time));
+
+			setTurnGunRight(normalizeBearing(absoluteDegree - getGunHeading()));
+
+			if(getGunHeat() == 0 && Math.abs(getGunTurnRemaining()) < 10)
+			{
+				setFire(firePower);
+			}
 		}
 	}
 
@@ -350,19 +353,19 @@ public class BobTheBuilder extends AdvancedRobot
 		double arcSin = Math.toDegrees(Math.asin(distanceX / hypotenuse));
 		double bearing = 0;
 
-		if(distanceX > 0 && distanceY > 0) // both pos: lower-Left
+		if(distanceX >= 0 && distanceY >= 0) // both pos: lower-Left
 		{
 			bearing = arcSin;
 		}
-		else if(distanceX < 0 && distanceY > 0) // x neg, y pos: lower-right
+		else if(distanceX <= 0 && distanceY >= 0) // x neg, y pos: lower-right
 		{
 			bearing = 360 + arcSin; // arcsin is negative here, actually 360 - ang
 		}
-		else if(distanceX > 0 && distanceY < 0) // x pos, y neg: upper-left
+		else if(distanceX >= 0 && distanceY <= 0) // x pos, y neg: upper-left
 		{
 			bearing = 180 - arcSin;
 		}
-		else if(distanceX < 0 && distanceY < 0) // both neg: upper-right
+		else if(distanceX <= 0 && distanceY <= 0) // both neg: upper-right
 		{
 			bearing = 180 - arcSin; // arcsin is negative here, actually 180 + ang
 		}
