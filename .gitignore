@@ -2,5 +2,9 @@
 robot.database
 *.jar
 
+!battles/
+battles/intro.battle
+battles/sample.battle
+
 !bobthebuilder/
 bobthebuilder/*.class
