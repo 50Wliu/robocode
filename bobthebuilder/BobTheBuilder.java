@@ -15,7 +15,7 @@ public class BobTheBuilder extends AdvancedRobot
 	private boolean hitRobot = false;
 	private boolean lockMode = false;
 
-	private final String VERSION = "0.0.10";
+	private final String VERSION = "0.0.11";
 
 	private enum RobotModes
 	{
