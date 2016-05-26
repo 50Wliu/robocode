@@ -3,4 +3,4 @@
 #  (BobTheBuilder should place 1st)
 #
 
-robocode.battle.selectedRobots = bobthebuilder.BobTheBuilder*, sample.Corners, sample.Crazy, sample.Fire, sample.MyFirstJuniorRobot, sample.MyFirstRobot, sample.PaintingRobot, sample.RamFire, sample.SittingDuck, sample.SpinBot, sample.Target, sample.TrackFire, sample.TrackFire, sample.TrackFire, sample.VelociRobot, sample.Walls
+robocode.battle.selectedRobots = bobthebuilder.BobTheBuilder*, bobthebuilder.BobTheBuilder, sample.Corners, sample.Crazy, sample.Fire, sample.MyFirstJuniorRobot, sample.MyFirstRobot, sample.PaintingRobot, sample.RamFire, sample.SittingDuck, sample.SpinBot, sample.Target, sample.TrackFire, sample.TrackFire, sample.TrackFire, sample.VelociRobot, sample.Walls
