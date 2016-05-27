@@ -18,7 +18,7 @@ public class BobTheBuilder extends AdvancedRobot
 	private boolean hitRobot = false;
 	private boolean lockMode = false;
 
-	private final String VERSION = "0.0.11";
+	private final String VERSION = "0.0.12";
 
 	private enum RobotModes
 	{
@@ -33,29 +33,30 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void run()
 	{
-		enemies = new HashMap<String, AdvancedEnemyBot>(getOthers());
-		setColors(Color.blue, Color.blue, Color.yellow);
-		setBulletColor(Color.yellow);
-		setAdjustRadarForGunTurn(true);
-		setAdjustGunForRobotTurn(true);
+		enemies = new HashMap<String, AdvancedEnemyBot>(this.getOthers());
 
-		addCustomEvent(new Condition("there's_an_obstacle_ahead")
+		this.setColors(Color.blue, Color.blue, Color.yellow);
+		this.setBulletColor(Color.yellow);
+		this.setAdjustRadarForGunTurn(true);
+		this.setAdjustGunForRobotTurn(true);
+
+		this.addCustomEvent(new Condition("there's_an_obstacle_ahead")
 		{
 			public boolean test()
 			{
 				return !tooCloseToWall && (
-					getX() <= wallMargin ||
-					getX() >= getBattleFieldWidth() - wallMargin ||
-					getY() <= wallMargin ||
-					getY() >= getBattleFieldHeight() - wallMargin
+					BobTheBuilder.this.getX() <= wallMargin ||
+					BobTheBuilder.this.getX() >= getBattleFieldWidth() - wallMargin ||
+					BobTheBuilder.this.getY() <= wallMargin ||
+					BobTheBuilder.this.getY() >= getBattleFieldHeight() - wallMargin
 				);
 			}
 		});
 
 		while(true)
 		{
-			setDebugProperty("version", VERSION);
-			setDebugProperty("mode", mode.toString());
+			this.setDebugProperty("version", VERSION);
+			this.setDebugProperty("mode", mode.toString());
 			doScanner();
 			doMovement();
 			doGun();
@@ -78,12 +79,12 @@ public class BobTheBuilder extends AdvancedRobot
 		|| e.getDistance() < enemy.getDistance() - 70 // New robot is a lot closer than current enemy
 		|| e.getName().equals(enemy.getName())) // New robot is the current enemy
 		{
-			setDebugProperty("enemy", e.getName());
+			this.setDebugProperty("enemy", e.getName());
 			enemy = enemies.get(e.getName());
 
 			if(mode == RobotModes.MODE_TRACK || mode == RobotModes.MODE_RAM)
 			{
-				setTurnRight(enemy.getBearing());
+				this.setTurnRight(enemy.getBearing());
 			}
 		}
 	}
@@ -101,11 +102,11 @@ public class BobTheBuilder extends AdvancedRobot
 		// Move immediately so that we don't generate more HitWallEvents while turning
 		if(e.getBearing() > - 90 && e.getBearing() <= 90)
 		{
-			back(10);
+			this.back(10);
 		}
 		else
 		{
-			ahead(10);
+			this.ahead(10);
 		}
 		tooCloseToWall = true;
 	}
@@ -117,16 +118,16 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			// Move "backwards" a bit so that we don't get stuck
 			// TODO: Calculate the bearing to the wall even if we haven't hit a wall
-			if(tooCloseToWall && !getHitWallEvents().isEmpty())
+			if(tooCloseToWall && !this.getHitWallEvents().isEmpty())
 			{
-				turnRight((getHitWallEvents().lastElement().getBearing() + e.getBearing()) / 2);
+				this.turnRight((this.getHitWallEvents().lastElement().getBearing() + e.getBearing()) / 2);
 			}
-			setAhead(e.getBearing() > - 90 && e.getBearing() <= 90 ? -100 : 100);
+			this.setAhead(e.getBearing() > - 90 && e.getBearing() <= 90 ? -100 : 100);
 		}
 		else // Ram them!
 		{
-			setTurnRight(e.getBearing());
-			setAhead(40);
+			this.setTurnRight(e.getBearing());
+			this.setAhead(40);
 		}
 	}
 
@@ -177,14 +178,14 @@ public class BobTheBuilder extends AdvancedRobot
 		// {
 		// 	mode = RobotModes.MODE_ENCIRCLE;
 		// }
-		/* else */if(getOthers() > 1)
+		/* else */if(this.getOthers() > 1)
 		{
 			if(!lockMode)
 			{
 				mode = RobotModes.MODE_STRAFE;
 			}
 		}
-		else if(getOthers() == 1)
+		else if(this.getOthers() == 1)
 		{
 			if(!lockMode)
 			{
@@ -193,10 +194,10 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 		else // Victory!
 		{
-			setMaxVelocity(0);
+			this.setMaxVelocity(0);
 			for(int i = 0; i < 10; i++)
 			{
-				setTurnGunRight(360 * 5);
+				this.setTurnGunRight(360 * 5);
 			}
 		}
 	}
@@ -211,7 +212,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void doScanner()
 	{
-		setTurnRadarRight(360);
+		this.setTurnRadarRight(360);
 	}
 
 	public void doMovement()
@@ -258,7 +259,7 @@ public class BobTheBuilder extends AdvancedRobot
 			{
 				if(hitRobot)
 				{
-					if(getDistanceRemaining() == 0)
+					if(this.getDistanceRemaining() == 0)
 					{
 						hitRobot = false;
 					}
@@ -270,7 +271,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 				if(tooCloseToWall) // Move towards the center of the battlefield
 				{
-					if(getDistanceRemaining() == 0)
+					if(this.getDistanceRemaining() == 0)
 					{
 						tooCloseToWall = false;
 					}
@@ -278,20 +279,20 @@ public class BobTheBuilder extends AdvancedRobot
 					{
 						double absoluteBearingToCenter = absoluteBearing(getX(), getY(), getBattleFieldWidth() / 2, getBattleFieldHeight() / 2);
 						double turn = absoluteBearingToCenter - getHeading();
-						setTurnRight(normalizeBearing(turn));
-						setAhead(100);
+						this.setTurnRight(normalizeBearing(turn));
+						this.setAhead(100);
 						return;
 					}
 				}
 
-				setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
+				this.setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
 
 				// Strafe rather randomly
 				if(ThreadLocalRandom.current().nextInt(0, 51) == 50)
 				{
 					moveDirection *= -1;
 				}
-				setAhead(1000 * moveDirection);
+				this.setAhead(1000 * moveDirection);
 				break;
 			}
 			case MODE_TRACK:
@@ -300,7 +301,7 @@ public class BobTheBuilder extends AdvancedRobot
 				{
 					// We have the advantage; ram them for extra points!
 					mode = RobotModes.MODE_RAM;
-					setAhead(enemy.getDistance() + 5);
+					this.setAhead(enemy.getDistance() + 5);
 				}
 				else if(getEnergy() < 15 && enemy.getEnergy() > 10 && !lockMode)
 				{
@@ -309,7 +310,7 @@ public class BobTheBuilder extends AdvancedRobot
 				}
 				else
 				{
-					setAhead(enemy.getDistance() - 50);
+					this.setAhead(enemy.getDistance() - 50);
 				}
 				break;
 			}
@@ -317,12 +318,12 @@ public class BobTheBuilder extends AdvancedRobot
 			{
 				if(enemy.getEnergy() < getEnergy())
 				{
-					setAhead(enemy.getDistance() + 5);
+					this.setAhead(enemy.getDistance() + 5);
 				}
 				else if(!lockMode) // Ruh roh
 				{
 					mode = RobotModes.MODE_TRACK;
-					setAhead(enemy.getDistance() - 50);
+					this.setAhead(enemy.getDistance() - 50);
 				}
 				break;
 			}
@@ -339,30 +340,30 @@ public class BobTheBuilder extends AdvancedRobot
 
 		if(mode == RobotModes.MODE_RAM && hitRobot)
 		{
-			setTurnGunRight(normalizeBearing(getHeading() - getGunHeading() + enemy.getBearing()));
-			if(getGunHeat() == 0 && getGunTurnRemaining() < 10)
+			this.setTurnGunRight(normalizeBearing(getHeading() - getGunHeading() + enemy.getBearing()));
+			if(this.getGunHeat() == 0 && this.getGunTurnRemaining() < 10)
 			{
 				// We get extra points if we kill them by ramming
 				// TODO: Make this more fluid and not a bunch of if/else statements
 				if(enemy.getEnergy() > 16)
 				{
-					setFire(3);
+					this.setFire(3);
 				}
 				else if(enemy.getEnergy() > 10)
 				{
-					setFire(2);
+					this.setFire(2);
 				}
 				else if(enemy.getEnergy() > 4)
 				{
-					setFire(1);
+					this.setFire(1);
 				}
 				else if(enemy.getEnergy() > 0.5)
 				{
-					setFire(0.5);
+					this.setFire(0.5);
 				}
 				else if(enemy.getEnergy() > 0.4)
 				{
-					setFire(0.1);
+					this.setFire(0.1);
 				}
 			}
 		}
@@ -372,13 +373,13 @@ public class BobTheBuilder extends AdvancedRobot
 			double bulletSpeed = 20 - firePower * 3;
 			int time = (int) Math.ceil((enemy.getDistance() / bulletSpeed));
 
-			double absoluteDegree = absoluteBearing(getX(), getY(), enemy.getFutureX(time), enemy.getFutureY(time));
+			double absoluteDegree = absoluteBearing(this.getX(), this.getY(), enemy.getFutureX(time), enemy.getFutureY(time));
 
-			setTurnGunRight(normalizeBearing(absoluteDegree - getGunHeading()));
+			this.setTurnGunRight(normalizeBearing(absoluteDegree - getGunHeading()));
 
-			if(getGunHeat() == 0 && Math.abs(getGunTurnRemaining()) < 10)
+			if(this.getGunHeat() == 0 && Math.abs(this.getGunTurnRemaining()) < 10)
 			{
-				setFire(firePower);
+				this.setFire(firePower);
 			}
 		}
 	}
