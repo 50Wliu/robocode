@@ -390,7 +390,7 @@ public class BobTheBuilder extends AdvancedRobot
 		double distanceX = x2 - x1;
 		double distanceY = y2 - y1;
 		double hypotenuse = Math.sqrt(Math.pow(distanceX, 2) + Math.pow(distanceY, 2));
-		double arcSin = Math.toDegrees(Math.asin(distanceX / hypotenuse));
+		double arcSin = Math.toDegrees(Math.asin(distanceX / hypotenuse)); // Yes, we actually do want sin here
 		double bearing = 0;
 
 		if(distanceX >= 0 && distanceY >= 0) // both pos: lower-Left
