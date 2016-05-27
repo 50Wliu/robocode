@@ -57,9 +57,9 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			this.setDebugProperty("version", VERSION);
 			this.setDebugProperty("mode", mode.toString());
-			doScanner();
-			doMovement();
-			doGun();
+			scan();
+			move();
+			fire();
 			execute();
 		}
 	}
@@ -210,12 +210,12 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 	}
 
-	public void doScanner()
+	public void scan()
 	{
 		this.setTurnRadarRight(360);
 	}
 
-	public void doMovement()
+	public void move()
 	{
 		switch(mode)
 		{
@@ -330,8 +330,8 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 	}
 
-	// FIXME: Predictive targetting isn't accurate at long distances or for spinning enemies
-	public void doGun()
+	// FIXME: Predictive targeting isn't accurate at long distances or for spinning enemies
+	public void fire()
 	{
 		if(enemy.none())
 		{
