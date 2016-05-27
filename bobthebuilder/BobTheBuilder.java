@@ -1,6 +1,7 @@
 package bobthebuilder;
 
 import robocode.*;
+import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -8,7 +9,9 @@ import java.awt.event.KeyEvent.*;
 
 public class BobTheBuilder extends AdvancedRobot
 {
+	private ArrayList<AdvancedEnemyBot> enemies;
 	private AdvancedEnemyBot enemy = new AdvancedEnemyBot();
+	private int enemyIndex = 1; // Unimplemented
 	private int moveDirection = 1;
 	private int wallMargin = 50;
 	private boolean tooCloseToWall = false;
@@ -23,18 +26,18 @@ public class BobTheBuilder extends AdvancedRobot
 		MODE_STRAFE,
 		MODE_TRACK,
 		MODE_RAM,
-		MODE_MANUAL
+		MODE_MANUAL // Unimplemented
 	}
 
 	private RobotModes mode = RobotModes.MODE_STRAFE;
 
 	public void run()
 	{
+		enemies = new ArrayList<AdvancedEnemyBot>(getOthers());
 		setColors(Color.blue, Color.blue, Color.yellow);
 		setBulletColor(Color.yellow);
 		setAdjustRadarForGunTurn(true);
 		setAdjustGunForRobotTurn(true);
-		enemy.reset();
 
 		addCustomEvent(new Condition("there's_an_obstacle_ahead")
 		{
@@ -62,6 +65,36 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void onScannedRobot(ScannedRobotEvent e)
 	{
+		boolean alreadyAdded = false;
+
+		if(enemies.isEmpty())
+		{
+			enemies.add(new AdvancedEnemyBot(e, this, 0));
+			alreadyAdded = true;
+		}
+
+		for(int i = 0; i < enemies.size(); i++)
+		{
+			if(e.getName().equals(enemies.get(i).getName()))
+			{
+				alreadyAdded = true;
+			}
+		}
+
+		if(!alreadyAdded)
+		{
+			enemies.add(new AdvancedEnemyBot(e, this, enemyIndex));
+			enemyIndex++;
+		}
+
+		for(AdvancedEnemyBot temp : enemies)
+		{
+			if(e.getName().equals(temp.getName()))
+			{
+				temp.update(e, this);
+			}
+		}
+
 		if(enemy.none() // No enemy
 		|| e.getEnergy() <= 0 // Enemy is disabled
 		|| (e.getEnergy() < enemy.getEnergy() && e.getDistance() < enemy.getDistance()) // New robot has less life than the current enemy and is closer
@@ -69,7 +102,15 @@ public class BobTheBuilder extends AdvancedRobot
 		|| e.getName().equals(enemy.getName())) // New robot is the current enemy
 		{
 			setDebugProperty("enemy", e.getName());
-			enemy.update(e, this);
+
+			for(AdvancedEnemyBot temp : enemies)
+			{
+				if(e.getName().equals(temp.getName()))
+				{
+					enemy = temp;
+				}
+			}
+
 			if(mode == RobotModes.MODE_TRACK || mode == RobotModes.MODE_RAM)
 			{
 				setTurnRight(enemy.getBearing());

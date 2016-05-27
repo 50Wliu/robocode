@@ -4,13 +4,20 @@ import robocode.*;
 
 public class AdvancedEnemyBot extends EnemyBot
 {
-
+	private int id; // Unimplemented
 	private double x;
 	private double y;
 
 	public AdvancedEnemyBot()
 	{
 		reset();
+	}
+
+	public AdvancedEnemyBot(ScannedRobotEvent event, Robot robot, int id)
+	{
+		reset();
+		update(event, robot);
+		this.id = id;
 	}
 
 	public void reset()
@@ -26,7 +33,7 @@ public class AdvancedEnemyBot extends EnemyBot
 		super.update(e);
 
 		double absBearingDeg = (robot.getHeading() + e.getBearing());
-		if (absBearingDeg < 0)
+		if(absBearingDeg < 0)
 		{
 			absBearingDeg += 360;
 		}
