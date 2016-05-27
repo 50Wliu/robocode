@@ -1,7 +1,7 @@
 package bobthebuilder;
 
 import robocode.*;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -9,9 +9,9 @@ import java.awt.event.KeyEvent.*;
 
 public class BobTheBuilder extends AdvancedRobot
 {
-	private ArrayList<AdvancedEnemyBot> enemies;
+	private HashMap<String, AdvancedEnemyBot> enemies;
 	private AdvancedEnemyBot enemy = new AdvancedEnemyBot();
-	private int enemyIndex = 1; // Unimplemented
+	private int id = 0; // Unimplemented
 	private int moveDirection = 1;
 	private int wallMargin = 50;
 	private boolean tooCloseToWall = false;
@@ -33,7 +33,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void run()
 	{
-		enemies = new ArrayList<AdvancedEnemyBot>(getOthers());
+		enemies = new HashMap<String, AdvancedEnemyBot>(getOthers());
 		setColors(Color.blue, Color.blue, Color.yellow);
 		setBulletColor(Color.yellow);
 		setAdjustRadarForGunTurn(true);
@@ -65,35 +65,12 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void onScannedRobot(ScannedRobotEvent e)
 	{
-		boolean alreadyAdded = false;
-
-		if(enemies.isEmpty())
+		if(!enemies.containsKey(e.getName()))
 		{
-			enemies.add(new AdvancedEnemyBot(e, this, 0));
-			alreadyAdded = true;
+			enemies.put(e.getName(), new AdvancedEnemyBot(e, this, id));
+			id++;
 		}
-
-		for(int i = 0; i < enemies.size(); i++)
-		{
-			if(e.getName().equals(enemies.get(i).getName()))
-			{
-				alreadyAdded = true;
-			}
-		}
-
-		if(!alreadyAdded)
-		{
-			enemies.add(new AdvancedEnemyBot(e, this, enemyIndex));
-			enemyIndex++;
-		}
-
-		for(AdvancedEnemyBot temp : enemies)
-		{
-			if(e.getName().equals(temp.getName()))
-			{
-				temp.update(e, this);
-			}
-		}
+		enemies.get(e.getName()).update(e, this);
 
 		if(enemy.none() // No enemy
 		|| e.getEnergy() <= 0 // Enemy is disabled
@@ -102,14 +79,7 @@ public class BobTheBuilder extends AdvancedRobot
 		|| e.getName().equals(enemy.getName())) // New robot is the current enemy
 		{
 			setDebugProperty("enemy", e.getName());
-
-			for(AdvancedEnemyBot temp : enemies)
-			{
-				if(e.getName().equals(temp.getName()))
-				{
-					enemy = temp;
-				}
-			}
+			enemy = enemies.get(e.getName());
 
 			if(mode == RobotModes.MODE_TRACK || mode == RobotModes.MODE_RAM)
 			{
