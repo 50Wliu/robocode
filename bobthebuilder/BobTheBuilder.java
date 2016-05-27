@@ -3,7 +3,7 @@ package bobthebuilder;
 import robocode.*;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
-import java.awt.*;
+import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyEvent.*;
 
