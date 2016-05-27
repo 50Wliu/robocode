@@ -171,6 +171,7 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		if(e.getName().equals(enemy.getName()))
 		{
+			enemies.remove(enemy.getName());
 			enemy.reset();
 		}
 
