@@ -44,5 +44,3 @@ practicegui: rc/libs/robocode.jar rc/robots/BobTheBuilder.jar
 	$(ROBO)
 
 build: BobTheBuilder.jar
-
-cleanall: clean cleandepends
