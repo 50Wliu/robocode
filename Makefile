@@ -4,7 +4,7 @@
 
 ROBO = java -Xmx512M -cp rc/libs/robocode.jar robocode.Robocode -cwd rc/
 
-time := $(shell /bin/date +%s)
+time := $(shell date +%s)
 
 BobTheBuilder.jar: bobthebuilder/*.java bobthebuilder/manifest.txt bobthebuilder/*.properties rc/libs/robocode.jar
 	javac -cp rc/libs/robocode.jar bobthebuilder/*.java
