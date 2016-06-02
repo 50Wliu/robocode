@@ -4,71 +4,71 @@ import robocode.*;
 
 public class AdvancedEnemyBot extends EnemyBot
 {
-	private int id; // Unimplemented
-	private double x;
-	private double y;
-	private double cachedEnergy;
+    private int id; // Unimplemented
+    private double x;
+    private double y;
+    private double cachedEnergy;
 
-	public AdvancedEnemyBot()
-	{
-		reset();
-	}
+    public AdvancedEnemyBot()
+    {
+        reset();
+    }
 
-	public AdvancedEnemyBot(ScannedRobotEvent event, Robot robot, int id)
-	{
-		reset();
-		update(event, robot);
-		this.id = id;
-	}
+    public AdvancedEnemyBot(ScannedRobotEvent event, Robot robot, int id)
+    {
+        reset();
+        update(event, robot);
+        this.id = id;
+    }
 
-	public void reset()
-	{
-		super.reset();
+    public void reset()
+    {
+        super.reset();
 
-		x = 0.0;
-		y = 0.0;
-		cachedEnergy = 0.0;
-	}
+        x = 0.0;
+        y = 0.0;
+        cachedEnergy = 0.0;
+    }
 
-	public void update(ScannedRobotEvent e, Robot robot)
-	{
-		super.update(e);
+    public void update(ScannedRobotEvent e, Robot robot)
+    {
+        super.update(e);
 
-		double absBearingDeg = (robot.getHeading() + e.getBearing());
-		if(absBearingDeg < 0)
-		{
-			absBearingDeg += 360;
-		}
+        double absBearingDeg = (robot.getHeading() + e.getBearing());
+        if(absBearingDeg < 0)
+        {
+            absBearingDeg += 360;
+        }
 
-		// yes, you use the _sine_ to get the X value because 0 deg is North
-		x = robot.getX() + Math.sin(Math.toRadians(absBearingDeg)) * e.getDistance();
+        // yes, you use the _sine_ to get the X value because 0 deg is North
+        x = robot.getX() + Math.sin(Math.toRadians(absBearingDeg)) * e.getDistance();
 
-		// likewise, you use the _cosine_ to get the Y value for the same reason
-		y = robot.getY() + Math.cos(Math.toRadians(absBearingDeg)) * e.getDistance();
-	}
+        // likewise, you use the _cosine_ to get the Y value for the same reason
+        y = robot.getY() + Math.cos(Math.toRadians(absBearingDeg)) * e.getDistance();
+    }
 
-	public double getX()
-	{
-		return x;
-	}
+    public double getX()
+    {
+        return x;
+    }
 
-	public double getY()
-	{
-		return y;
-	}
+    public double getY()
+    {
+        return y;
+    }
 
-	public double getFutureX(long when)
-	{
-		return x + Math.sin(Math.toRadians(getHeading())) * getVelocity() * when;
-	}
+    public double getFutureX(long when)
+    {
+        return x + Math.sin(Math.toRadians(getHeading())) * getVelocity() * when;
+    }
 
-	public double getFutureY(long when)
-	{
-		return y + Math.cos(Math.toRadians(getHeading())) * getVelocity() * when;
-	}
+    public double getFutureY(long when)
+    {
+        return y + Math.cos(Math.toRadians(getHeading())) * getVelocity() * when;
+    }
 
-	public double getCachedEnergy()
-	{
-		return cachedEnergy;
-	}
+    public double getCachedEnergy()
+    {
+        return cachedEnergy;
+    }
 }
