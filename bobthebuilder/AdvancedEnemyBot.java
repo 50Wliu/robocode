@@ -27,7 +27,7 @@ public class AdvancedEnemyBot extends EnemyBot
 
 		x = 0.0;
 		y = 0.0;
-		cachedEnergy = 0.0;
+		cachedEnergy = 100.0;
 	}
 
 	public void update(ScannedRobotEvent e, Robot robot)
@@ -45,6 +45,8 @@ public class AdvancedEnemyBot extends EnemyBot
 
 		// likewise, you use the _cosine_ to get the Y value for the same reason
 		y = robot.getY() + Math.cos(Math.toRadians(absBearingDeg)) * e.getDistance();
+
+		cachedEnergy = e.getEnergy();
 	}
 
 	public double getX()
@@ -70,5 +72,10 @@ public class AdvancedEnemyBot extends EnemyBot
 	public double getCachedEnergy()
 	{
 		return cachedEnergy;
+	}
+
+	public void setCachedEnergy(double energy)
+	{
+		cachedEnergy = energy;
 	}
 }
