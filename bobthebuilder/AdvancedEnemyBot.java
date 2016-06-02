@@ -7,6 +7,7 @@ public class AdvancedEnemyBot extends EnemyBot
 	private int id; // Unimplemented
 	private double x;
 	private double y;
+	private double cachedEnergy;
 
 	public AdvancedEnemyBot()
 	{
@@ -26,6 +27,7 @@ public class AdvancedEnemyBot extends EnemyBot
 
 		x = 0.0;
 		y = 0.0;
+		cachedEnergy = 0.0;
 	}
 
 	public void update(ScannedRobotEvent e, Robot robot)
@@ -63,5 +65,10 @@ public class AdvancedEnemyBot extends EnemyBot
 	public double getFutureY(long when)
 	{
 		return y + Math.cos(Math.toRadians(getHeading())) * getVelocity() * when;
+	}
+
+	public double getCachedEnergy()
+	{
+		return cachedEnergy;
 	}
 }

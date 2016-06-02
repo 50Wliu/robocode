@@ -1,22 +1,33 @@
 package bobthebuilder;
 
 import robocode.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyEvent.*;
+import java.awt.geom.*;
 
 public class BobTheBuilder extends AdvancedRobot
 {
 	private HashMap<String, AdvancedEnemyBot> enemies;
 	private AdvancedEnemyBot enemy = new AdvancedEnemyBot();
+	private Rectangle2D.Double safetyRectangle;
+	private Point2D.Double position;
+	private Point2D.Double enemyPosition; // TODO: Move this into AdvancedEnemyBot
+	private ArrayList<EnemyWave> waves;
+	private ArrayList<Integer> surfDirections;
+	private ArrayList<Double> surfAbsoluteBearings;
 	private int id = 0; // Unimplemented
 	private int moveDirection = 1;
 	private int wallMargin = 50;
 	private boolean tooCloseToWall = false;
 	private boolean hitRobot = false;
 	private boolean lockMode = false;
+
+	private final int WALL_MARGIN = 150;
+	private final int ROBOT_SIZE = 18;
 
 	private final String VERSION = "0.0.12";
 
@@ -34,6 +45,10 @@ public class BobTheBuilder extends AdvancedRobot
 	public void run()
 	{
 		enemies = new HashMap<String, AdvancedEnemyBot>(this.getOthers());
+		safetyRectangle = new Rectangle2D.Double(ROBOT_SIZE, ROBOT_SIZE, this.getBattleFieldWidth() - ROBOT_SIZE * 2, this.getBattleFieldHeight() - ROBOT_SIZE * 2);
+		waves = new ArrayList<EnemyWave>();
+		surfDirections = new ArrayList<Integer>();
+		surfAbsoluteBearings = new ArrayList<Double>();
 
 		this.setColors(Color.blue, Color.blue, Color.yellow);
 		this.setBulletColor(Color.yellow);
@@ -46,9 +61,9 @@ public class BobTheBuilder extends AdvancedRobot
 			{
 				return !tooCloseToWall && (
 					BobTheBuilder.this.getX() <= wallMargin ||
-					BobTheBuilder.this.getX() >= getBattleFieldWidth() - wallMargin ||
+					BobTheBuilder.this.getX() >= BobTheBuilder.this.getBattleFieldWidth() - wallMargin ||
 					BobTheBuilder.this.getY() <= wallMargin ||
-					BobTheBuilder.this.getY() >= getBattleFieldHeight() - wallMargin
+					BobTheBuilder.this.getY() >= BobTheBuilder.this.getBattleFieldHeight() - wallMargin
 				);
 			}
 		});
@@ -66,12 +81,37 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void onScannedRobot(ScannedRobotEvent e)
 	{
+		position = new Point2D.Double(this.getX(), this.getY());
+
+		double lateralVelocity = this.getVelocity() * Math.sin(e.getBearingRadians());
+		double absoluteBearing = e.getBearingRadians() + this.getHeadingRadians();
+
+		surfDirections.add(0, new Integer((lateralVelocity >= 0 ? 1 : -1)));
+		surfAbsoluteBearings.add(0, new Double(absoluteBearing + Math.PI));
+
 		if(!enemies.containsKey(e.getName()))
 		{
 			enemies.put(e.getName(), new AdvancedEnemyBot(e, this, id));
 			id++;
 		}
+
+		double firePower = enemies.get(e.getName()).getCachedEnergy() - e.getEnergy();
+		if(firePower > 0.09 && firePower < 3.01 && surfDirections.size() > 2) // Doubles are imprecise so don't compare equal to
+		{
+			EnemyWave wave = new EnemyWave();
+			wave.setFireTime(this.getTime() - 1);
+			wave.setBulletVelocity(20.0 - (3.0 * firePower));
+			wave.setDistanceTraveled(20.0 - (3.0 * firePower)); // ?
+			wave.setDirection(surfDirections.get(2).intValue());
+			wave.setDirectAngle(surfAbsoluteBearings.get(2).doubleValue());
+			wave.setFireLocation((Point2D.Double) enemyPosition.clone());
+
+			waves.add(wave);
+		}
+
 		enemies.get(e.getName()).update(e, this);
+
+		enemyPosition = project(position, absoluteBearing, e.getDistance());
 
 		if(enemy.none() // No enemy
 		|| e.getEnergy() <= 0 // Enemy is disabled
@@ -91,9 +131,11 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void onHitByBullet(HitByBulletEvent e)
 	{
-		//Stop wherever we're going and BACK UP
-		// moveDirection *= -1;
-		// setAhead(10000 * moveDirection);
+		// if(!enemies.containsKey(e.getName()))
+		// {
+		// 	enemies.put(e.getName(), new AdvancedEnemyBot());
+		// 	id++;
+		// }
 	}
 
 	public void onHitWall(HitWallEvent e)
@@ -379,6 +421,21 @@ public class BobTheBuilder extends AdvancedRobot
 			}
 		}
 	}
+
+	// Returns how much we should turn in order to avoid hitting a wall
+	private double wallSmoothing(Point2D.Double botLocation, double angle, int orientation)
+	{
+        while(!safetyRectangle.contains(project(botLocation, angle, WALL_MARGIN)))
+		{
+            angle += orientation * 0.05;
+        }
+        return angle;
+    }
+
+	public static Point2D.Double project(Point2D.Double sourceLocation, double angle, double length)
+	{
+        return new Point2D.Double(sourceLocation.x + Math.sin(angle) * length, sourceLocation.y + Math.cos(angle) * length);
+    }
 
 	private double absoluteBearing(double x1, double y1, double x2, double y2)
 	{
