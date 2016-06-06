@@ -617,8 +617,9 @@ public class BobTheBuilder extends AdvancedRobot
 
 	private void setBackAsFront(double goAngle)
 	{
+		// this.setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
 		double angle = Utils.normalRelativeAngle(goAngle - this.getHeadingRadians());
-		if(Math.abs(angle) > (Math.PI/2))
+		if(Math.abs(angle) > (Math.PI / 2))
 		{
 			if(angle < 0)
 			{
@@ -628,7 +629,7 @@ public class BobTheBuilder extends AdvancedRobot
 			{
 				this.setTurnLeftRadians(Math.PI - angle);
 			}
-			this.setBack(100);
+			moveDirection = -1;
 		}
 		else
 		{
@@ -640,8 +641,9 @@ public class BobTheBuilder extends AdvancedRobot
 			{
 				this.setTurnRightRadians(angle);
 			}
-			this.setAhead(100);
+			moveDirection = 1;
 		}
+		setAhead(100 * moveDirection);
 	}
 
 	// Returns how much we should turn in order to avoid hitting a wall
