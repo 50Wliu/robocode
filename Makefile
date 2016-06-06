@@ -8,7 +8,7 @@ time := $(shell date +%s)
 
 BobTheBuilder.jar: bobthebuilder/*.java bobthebuilder/manifest.txt bobthebuilder/*.properties rc/libs/robocode.jar
 	javac -cp rc/libs/robocode.jar bobthebuilder/*.java
-	jar -cfm BobTheBuilder.jar bobthebuilder/manifest.txt bobthebuilder/
+	jar -cfm BobTheBuilder.jar bobthebuilder/manifest.txt bobthebuilder/*.class bobthebuilder/*.properties
 
 rc/robots/BobTheBuilder.jar: BobTheBuilder.jar
 	cp BobTheBuilder.jar rc/robots/BobTheBuilder.jar
