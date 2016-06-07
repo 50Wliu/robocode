@@ -7,6 +7,7 @@ public class AdvancedEnemyBot extends EnemyBot
 	private int id; // Unimplemented
 	private double x;
 	private double y;
+	private double cachedEnergy;
 
 	public AdvancedEnemyBot()
 	{
@@ -26,23 +27,22 @@ public class AdvancedEnemyBot extends EnemyBot
 
 		x = 0.0;
 		y = 0.0;
+		cachedEnergy = 100.0;
 	}
 
 	public void update(ScannedRobotEvent e, Robot robot)
 	{
 		super.update(e);
 
-		double absBearingDeg = (robot.getHeading() + e.getBearing());
-		if(absBearingDeg < 0)
+		// Normal robots don't have getHeadingRadians()
+		double absoluteBearing = Math.toRadians(robot.getHeading()) + e.getBearingRadians();
+		if(absoluteBearing < 0)
 		{
-			absBearingDeg += 360;
+			absoluteBearing += 2 * Math.PI;
 		}
 
-		// yes, you use the _sine_ to get the X value because 0 deg is North
-		x = robot.getX() + Math.sin(Math.toRadians(absBearingDeg)) * e.getDistance();
-
-		// likewise, you use the _cosine_ to get the Y value for the same reason
-		y = robot.getY() + Math.cos(Math.toRadians(absBearingDeg)) * e.getDistance();
+		x = robot.getX() + Math.sin(absoluteBearing) * e.getDistance();
+		y = robot.getY() + Math.cos(absoluteBearing) * e.getDistance();
 	}
 
 	public double getX()
@@ -63,5 +63,15 @@ public class AdvancedEnemyBot extends EnemyBot
 	public double getFutureY(long when)
 	{
 		return y + Math.cos(Math.toRadians(getHeading())) * getVelocity() * when;
+	}
+
+	public double getCachedEnergy()
+	{
+		return cachedEnergy;
+	}
+
+	public void setCachedEnergy(double energy)
+	{
+		cachedEnergy = energy;
 	}
 }
