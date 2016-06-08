@@ -75,7 +75,7 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			this.setDebugProperty("version", VERSION);
 			this.setDebugProperty("mode", mode.toString());
-			if(enemy.none() || getOthers() != 1)
+			if(enemy.none() || getTime() - enemy.getLastUpdateTime() > 5 || getOthers() != 1)
 			{
 				this.setTurnRadarRightRadians(Double.POSITIVE_INFINITY);
 			}
@@ -133,7 +133,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 			if(mode == RobotModes.MODE_TRACK || mode == RobotModes.MODE_RAM)
 			{
-				this.setTurnRight(enemy.getBearing());
+				this.setTurnRight(enemy.getBearingRadians());
 			}
 			fire();
 			enemy.setCachedVelocity(enemy.getVelocity());
@@ -380,7 +380,7 @@ public class BobTheBuilder extends AdvancedRobot
 					}
 				}
 
-				this.setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
+				this.setTurnRight(normalizeBearing(Math.toDegrees(enemy.getBearingRadians()) + 90 - (15 * moveDirection)));
 
 				// Strafe rather randomly
 				if(ThreadLocalRandom.current().nextInt(0, 11) == 0)
@@ -425,7 +425,6 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 	}
 
-	// FIXME: Predictive targeting isn't accurate at long distances or for spinning enemies
 	private void fire()
 	{
 		if(enemy.none())
@@ -435,7 +434,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 		if(mode == RobotModes.MODE_RAM && hitRobot)
 		{
-			this.setTurnGunRight(normalizeBearing(getHeading() - getGunHeading() + enemy.getBearing()));
+			this.setTurnGunRight(normalizeBearing(Math.toDegrees(getHeadingRadians() - getGunHeadingRadians() + enemy.getBearingRadians())));
 			if(this.getGunHeat() == 0 && this.getGunTurnRemaining() < 10)
 			{
 				// We get extra points if we kill them by ramming
@@ -477,10 +476,10 @@ public class BobTheBuilder extends AdvancedRobot
 			// 	this.setFire(firePower);
 			// }
 
-			double absoluteBearing = Math.toRadians(enemy.getBearing()) + this.getHeadingRadians();
+			double absoluteBearing = enemy.getBearingRadians() + this.getHeadingRadians();
 			if(enemy.getVelocity() != 0)
 			{
-				if(Math.sin(Math.toRadians(enemy.getHeading()) - absoluteBearing) * enemy.getVelocity() < 0)
+				if(Math.sin(enemy.getHeadingRadians() - absoluteBearing) * enemy.getVelocity() < 0)
 				{
 					enemyDirection = -1;
 				}
@@ -677,15 +676,16 @@ public class BobTheBuilder extends AdvancedRobot
 	}
 
 	// Returns how much we should turn in order to avoid hitting a wall
-	private double wallSmoothing(Point2D.Double botLocation, double angle, int orientation)
+	private double wallSmoothing(Point2D.Double position, double angle, int orientation)
 	{
-		while(!safetyRectangle.contains(Helpers.project(botLocation, angle, WALL_MARGIN)))
+		while(!safetyRectangle.contains(Helpers.project(position, angle, WALL_MARGIN)))
 		{
 			angle += orientation * 0.05;
 		}
 		return angle;
 	}
 
+	// TODO: Remove in favor of Helpers.absoluteBearing
 	private double absoluteBearing(double x1, double y1, double x2, double y2)
 	{
 		double distanceX = x2 - x1;
@@ -713,6 +713,7 @@ public class BobTheBuilder extends AdvancedRobot
 		return bearing;
 	}
 
+	// TODO: Remove this in favor of Utils.NormalRelativeAngle, and if we can't do that, convert it to radians instead
 	private double normalizeBearing(double angle)
 	{
 		while(angle > 180)

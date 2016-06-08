@@ -29,10 +29,10 @@ public class EnemyBot
 
 	final public void update(ScannedRobotEvent e)
 	{
-		bearing = e.getBearing();
+		bearing = e.getBearingRadians();
 		distance = e.getDistance();
 		energy = e.getEnergy();
-		heading = e.getHeading();
+		heading = e.getHeadingRadians();
 		name = e.getName();
 		velocity = e.getVelocity();
 	}
@@ -47,7 +47,7 @@ public class EnemyBot
 		return name.equals("");
 	}
 
-	public double getBearing()
+	public double getBearingRadians()
 	{
 		return bearing;
 	}
@@ -62,7 +62,7 @@ public class EnemyBot
 		return energy;
 	}
 
-	public double getHeading()
+	public double getHeadingRadians()
 	{
 		return heading;
 	}

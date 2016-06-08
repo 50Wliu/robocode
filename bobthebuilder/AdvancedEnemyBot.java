@@ -9,13 +9,14 @@ public class AdvancedEnemyBot extends EnemyBot
 	private double y;
 	private double cachedEnergy;
 	private double cachedVelocity;
+	private long lastUpdateTime;
 
 	public AdvancedEnemyBot()
 	{
 		reset();
 	}
 
-	public AdvancedEnemyBot(ScannedRobotEvent event, Robot robot, int id)
+	public AdvancedEnemyBot(ScannedRobotEvent event, AdvancedRobot robot, int id)
 	{
 		reset();
 		update(event, robot);
@@ -30,14 +31,14 @@ public class AdvancedEnemyBot extends EnemyBot
 		y = 0.0;
 		cachedEnergy = 100.0;
 		cachedVelocity = 0.0;
+		lastUpdateTime = 0;
 	}
 
-	public void update(ScannedRobotEvent e, Robot robot)
+	public void update(ScannedRobotEvent e, AdvancedRobot robot)
 	{
 		super.update(e);
 
-		// Normal robots don't have getHeadingRadians()
-		double absoluteBearing = Math.toRadians(robot.getHeading()) + e.getBearingRadians();
+		double absoluteBearing = robot.getHeadingRadians() + e.getBearingRadians();
 		if(absoluteBearing < 0)
 		{
 			absoluteBearing += 2 * Math.PI;
@@ -45,6 +46,8 @@ public class AdvancedEnemyBot extends EnemyBot
 
 		x = robot.getX() + Math.sin(absoluteBearing) * e.getDistance();
 		y = robot.getY() + Math.cos(absoluteBearing) * e.getDistance();
+
+		lastUpdateTime = robot.getTime();
 	}
 
 	public double getX()
@@ -59,12 +62,12 @@ public class AdvancedEnemyBot extends EnemyBot
 
 	public double getFutureX(long when)
 	{
-		return x + Math.sin(Math.toRadians(getHeading())) * getVelocity() * when;
+		return x + Math.sin(getHeadingRadians()) * getVelocity() * when;
 	}
 
 	public double getFutureY(long when)
 	{
-		return y + Math.cos(Math.toRadians(getHeading())) * getVelocity() * when;
+		return y + Math.cos(getHeadingRadians()) * getVelocity() * when;
 	}
 
 	public double getCachedEnergy()
@@ -85,5 +88,10 @@ public class AdvancedEnemyBot extends EnemyBot
 	public void setCachedVelocity(double velocity)
 	{
 		cachedVelocity = velocity;
+	}
+
+	public long getLastUpdateTime()
+	{
+		return lastUpdateTime;
 	}
 }
