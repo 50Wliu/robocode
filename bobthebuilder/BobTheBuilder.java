@@ -102,13 +102,13 @@ public class BobTheBuilder extends AdvancedRobot
 		surfDirections.add(0, new Integer((lateralVelocity >= 0 ? 1 : -1)));
 		surfAbsoluteBearings.add(0, new Double(absoluteBearing + Math.PI));
 
-		double firePower = enemies.get(e.getName()).getCachedEnergy() - e.getEnergy();
-		if(firePower > 0.09 && firePower < 3.01 && surfDirections.size() > 2) // Doubles are imprecise so don't compare equal to
+		double power = enemies.get(e.getName()).getCachedEnergy() - e.getEnergy();
+		if(power > 0.09 && power < 3.01 && surfDirections.size() > 2) // Doubles are imprecise so don't compare equal to
 		{
 			EnemyWave wave = new EnemyWave();
 			wave.setFireTime(this.getTime() - 1);
-			wave.setBulletVelocity(20.0 - (3.0 * firePower));
-			wave.setDistanceTraveled(20.0 - (3.0 * firePower));
+			wave.setBulletVelocity(Helpers.bulletVelocity(power));
+			wave.setDistanceTraveled(Helpers.bulletVelocity(power));
 			wave.setDirection(surfDirections.get(2).intValue());
 			wave.setDirectAngle(surfAbsoluteBearings.get(2).doubleValue());
 			wave.setFireLocation((Point2D.Double) enemyPosition.clone());
@@ -137,6 +137,8 @@ public class BobTheBuilder extends AdvancedRobot
 			}
 			fire();
 			enemy.setCachedVelocity(enemy.getVelocity());
+
+			this.setTurnRadarRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getRadarHeadingRadians()) * 2);
 		}
 	}
 
@@ -502,7 +504,6 @@ public class BobTheBuilder extends AdvancedRobot
 			{
 				this.addCustomEvent(wave);
 			}
-			this.setTurnRadarRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getRadarHeadingRadians()) * 2);
 		}
 	}
 
@@ -555,12 +556,12 @@ public class BobTheBuilder extends AdvancedRobot
 
 	private EnemyWave getClosestSurfableWave()
 	{
-		double closestDistance = Double.POSITIVE_INFINITY; // I juse use some very big number here
+		double closestDistance = Double.POSITIVE_INFINITY;
 		EnemyWave surfWave = null;
 
-		for(int x = 0; x < surfWaves.size(); x++)
+		for(int i = 0; i < surfWaves.size(); i++)
 		{
-			EnemyWave wave = surfWaves.get(x);
+			EnemyWave wave = surfWaves.get(i);
 			double distance = position.distance(wave.getFireLocation()) - wave.getDistanceTraveled();
 			if(distance > wave.getBulletVelocity() && distance < closestDistance)
 			{
