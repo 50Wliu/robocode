@@ -1,50 +1,73 @@
 package bobthebuilder;
 
-import java.awt.geom.*;
+import robocode.*;
 import robocode.util.Utils;
+import java.awt.geom.*;
 
-public class BulletWave
+public class BulletWave extends Condition
 {
-	private double startX, startY, startBearing, power;
+	private static final double MAX_ESCAPE_ANGLE = 0.7;
+	private static final int MAX_SCAN_DISTANCE = 1200;
+	private static final int INDEXES = 5;
+	private static final int MIDDLE_BIN = (Helpers.BINS - 1) / 2;
+	private static final double BIN_WIDTH = MAX_ESCAPE_ANGLE / (double) MIDDLE_BIN;
+
+	private double bearing, power, distanceTraveled;
+	private Point2D.Double position;
+	public static Point2D.Double enemyPosition;
 	private long fireTime;
 	private int direction;
-	private int[] returnSegment;
+	private static int[][][][] statBuffers = new int[INDEXES][INDEXES][INDEXES][Helpers.BINS];
+	private int[] buffer;
+	private AdvancedRobot robot;
 
-	public BulletWave(double x, double y, double bearing, double bulletPower, int bulletDirection, long time, int[] segment)
+	public BulletWave(AdvancedRobot robot, AdvancedEnemyBot enemy, Point2D.Double position, double bearing, double power, int direction)
 	{
-		startX = x;
-		startY = y;
-		startBearing = bearing;
-		power = bulletPower;
-		direction = bulletDirection;
-		fireTime = time;
-		returnSegment = segment;
+		this.robot = robot;
+		this.position = position;
+		this.bearing = bearing;
+		this.power = power;
+		this.direction = direction;
+
+		// Update segmentations
+		int distanceIndex = (int) (enemy.getDistance() / (MAX_SCAN_DISTANCE / INDEXES));
+		int velocityIndex = (int) Math.abs(enemy.getVelocity() / 2);
+		int cachedVelocityIndex = (int) Math.abs(enemy.getCachedVelocity() / 2);
+		buffer = statBuffers[distanceIndex][velocityIndex][cachedVelocityIndex];
 	}
 
-	public boolean checkHit(double enemyX, double enemyY, long currentTime)
+	public boolean test()
 	{
-		// If the distance from the wave origin to our enemy has passed the distance the bullet would have traveled...
-		if(Point2D.distance(startX, startY, enemyX, enemyY) <= (currentTime - fireTime) * getBulletSpeed())
+		distanceTraveled += Helpers.bulletVelocity(power);
+		if(distanceTraveled > position.distance(enemyPosition) - Helpers.ROBOT_SIZE)
 		{
-			double desiredDirection = Math.atan2(enemyX - startX, enemyY - startY);
-			double angleOffset = Utils.normalRelativeAngle(desiredDirection - startBearing);
-
-			// Figure out the guess factor that the robot was at when this wave hit it and increment that index
-			double guessFactor = Math.max(-1, Math.min(1, angleOffset / maxEscapeAngle())) * direction;
-			int index = (int) Math.round((returnSegment.length - 1) / 2 * (guessFactor + 1));
-			returnSegment[index]++;
-			return true;
+			buffer[currentBin()]++;
+			robot.removeCustomEvent(this);
 		}
 		return false;
 	}
 
-	public double getBulletSpeed()
+	public double mostVisitedBearingOffset()
 	{
-		return 20 - power * 3;
+		return (direction * BIN_WIDTH) * (mostVisitedBin() - MIDDLE_BIN);
 	}
 
-	public double maxEscapeAngle()
+	private int currentBin()
 	{
-		return Math.asin(8 / getBulletSpeed());
+		int bin = (int) Math.round(((Utils.normalRelativeAngle(Helpers.absoluteBearing(position, enemyPosition) - bearing)) / (direction * BIN_WIDTH)) + MIDDLE_BIN);
+		return (int) Helpers.limit(0, bin, Helpers.BINS - 1);
+	}
+
+	private int mostVisitedBin()
+	{
+		int mostVisited = MIDDLE_BIN;
+		for(int i = 0; i < Helpers.BINS; i++)
+		{
+			if(buffer[i] > buffer[mostVisited])
+			{
+				mostVisited = i;
+			}
+		}
+		return mostVisited;
 	}
 }

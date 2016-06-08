@@ -8,6 +8,7 @@ public class AdvancedEnemyBot extends EnemyBot
 	private double x;
 	private double y;
 	private double cachedEnergy;
+	private double cachedVelocity;
 
 	public AdvancedEnemyBot()
 	{
@@ -28,6 +29,7 @@ public class AdvancedEnemyBot extends EnemyBot
 		x = 0.0;
 		y = 0.0;
 		cachedEnergy = 100.0;
+		cachedVelocity = 0.0;
 	}
 
 	public void update(ScannedRobotEvent e, Robot robot)
@@ -73,5 +75,15 @@ public class AdvancedEnemyBot extends EnemyBot
 	public void setCachedEnergy(double energy)
 	{
 		cachedEnergy = energy;
+	}
+
+	public double getCachedVelocity()
+	{
+		return cachedVelocity;
+	}
+
+	public void setCachedVelocity(double velocity)
+	{
+		cachedVelocity = velocity;
 	}
 }

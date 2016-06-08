@@ -13,8 +13,6 @@ import java.awt.geom.*;
 public class BobTheBuilder extends AdvancedRobot
 {
 	private static final int WALL_MARGIN = 150;
-	private static final int ROBOT_SIZE = 18;
-	private static final int BINS = 47;
 	private static final String VERSION = "0.2.0";
 
 	private HashMap<String, AdvancedEnemyBot> enemies;
@@ -25,9 +23,7 @@ public class BobTheBuilder extends AdvancedRobot
 	private ArrayList<EnemyWave> surfWaves;
 	private ArrayList<Integer> surfDirections;
 	private ArrayList<Double> surfAbsoluteBearings;
-	private ArrayList<BulletWave> bulletWaves;
-	private static double surfStats[] = new double[BINS];
-	private static int bulletStats[] = new int[BINS];
+	private static double surfStats[] = new double[Helpers.BINS];
 	private int id = 0; // Unimplemented
 	private int moveDirection = 1;
 	private int enemyDirection = 1;
@@ -51,14 +47,14 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		enemies = new HashMap<String, AdvancedEnemyBot>(this.getOthers());
 		enemy = new AdvancedEnemyBot();
-		safetyRectangle = new Rectangle2D.Double(ROBOT_SIZE, ROBOT_SIZE, this.getBattleFieldWidth() - ROBOT_SIZE * 2, this.getBattleFieldHeight() - ROBOT_SIZE * 2);
+		safetyRectangle = new Rectangle2D.Double(Helpers.ROBOT_SIZE, Helpers.ROBOT_SIZE, this.getBattleFieldWidth() - Helpers.ROBOT_SIZE * 2, this.getBattleFieldHeight() - Helpers.ROBOT_SIZE * 2);
 		surfWaves = new ArrayList<EnemyWave>();
 		surfDirections = new ArrayList<Integer>();
 		surfAbsoluteBearings = new ArrayList<Double>();
-		bulletWaves = new ArrayList<BulletWave>();
 
 		this.setColors(Color.blue, Color.blue, Color.yellow);
 		this.setBulletColor(Color.yellow);
+		this.setAdjustRadarForRobotTurn(true);
 		this.setAdjustRadarForGunTurn(true);
 		this.setAdjustGunForRobotTurn(true);
 
@@ -79,7 +75,10 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			this.setDebugProperty("version", VERSION);
 			this.setDebugProperty("mode", mode.toString());
-			this.setTurnRadarRight(360);
+			if(enemy.none() || getOthers() != 1)
+			{
+				this.setTurnRadarRightRadians(Double.POSITIVE_INFINITY);
+			}
 			move();
 			// fire();
 			execute();
@@ -116,7 +115,7 @@ public class BobTheBuilder extends AdvancedRobot
 			surfWaves.add(wave);
 		}
 
-		enemyPosition = project(position, absoluteBearing, e.getDistance());
+		enemyPosition = Helpers.project(position, absoluteBearing, e.getDistance());
 
 		updateSurfWaves();
 		surf();
@@ -137,6 +136,7 @@ public class BobTheBuilder extends AdvancedRobot
 				this.setTurnRight(enemy.getBearing());
 			}
 			fire();
+			enemy.setCachedVelocity(enemy.getVelocity());
 		}
 	}
 
@@ -477,8 +477,6 @@ public class BobTheBuilder extends AdvancedRobot
 			// 	this.setFire(firePower);
 			// }
 
-			updateBulletWaves();
-
 			double absoluteBearing = Math.toRadians(enemy.getBearing()) + this.getHeadingRadians();
 			if(enemy.getVelocity() != 0)
 			{
@@ -492,31 +490,20 @@ public class BobTheBuilder extends AdvancedRobot
 				}
 			}
 
-			double firePower = Math.min(500 / enemy.getDistance(), 3);
-			int[] currentStats = bulletStats;
-			BulletWave newBulletWave = new BulletWave(getX(), getY(), absoluteBearing, firePower, enemyDirection, getTime(), currentStats);
+			double power = Math.min(500 / enemy.getDistance(), 3);
+			Point2D.Double position = new Point2D.Double(this.getX(), this.getY());
+			BulletWave wave = new BulletWave(this, enemy, position, absoluteBearing, power, enemyDirection);
+			BulletWave.enemyPosition = Helpers.project(position, absoluteBearing, enemy.getDistance());
 
-			int bestIndex = (BINS - 1) / 2;	// Initialize it to be in the middle, aka guess factor 0
-			for(int i = 0; i < BINS; i++)
+			double radians = Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians() + wave.mostVisitedBearingOffset());
+			this.setTurnGunRightRadians(radians);
+			this.setFire(power);
+
+			if(this.getEnergy() >= power)
 			{
-				if(currentStats[bestIndex] < currentStats[i])
-				{
-					bestIndex = i;
-				}
+				this.addCustomEvent(wave);
 			}
-
-			// Reverse the math in BulletWave to find the guess factor
-			double guessFactor = (double)(bestIndex - (bulletStats.length - 1) / 2) / ((bulletStats.length - 1) / 2);
-			System.out.println("Using guess factor " + guessFactor);
-			double angleOffset = enemyDirection * guessFactor * newBulletWave.maxEscapeAngle();
-	        double radians = Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians() + angleOffset);
-	        this.setTurnGunRightRadians(radians);
-
-			// 9 pixels is half a robot
-			if(this.getGunHeat() == 0 && radians < Math.atan2(9, enemy.getDistance()) && setFireBullet(firePower) != null)
-			{
-				bulletWaves.add(newBulletWave);
-			}
+			this.setTurnRadarRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getRadarHeadingRadians()) * 2);
 		}
 	}
 
@@ -538,7 +525,7 @@ public class BobTheBuilder extends AdvancedRobot
 		double dangerLeft = checkDanger(surfWave, -1);
 		double dangerRight = checkDanger(surfWave, 1);
 
-		double goAngle = absoluteBearing(surfWave.getFireLocation(), position);
+		double goAngle = Helpers.absoluteBearing(surfWave.getFireLocation(), position);
 		if(dangerLeft < dangerRight)
 		{
 			goAngle = wallSmoothing(position, goAngle - (Math.PI / 2), -1);
@@ -567,19 +554,6 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 	}
 
-	private void updateBulletWaves()
-	{
-		for(int i = 0; i < bulletWaves.size(); i++)
-		{
-			BulletWave wave = bulletWaves.get(i);
-			if(wave.checkHit(enemy.getX(), enemy.getY(), getTime()))
-			{
-				bulletWaves.remove(wave);
-				i--;
-			}
-		}
-	}
-
 	private EnemyWave getClosestSurfableWave()
 	{
 		double closestDistance = Double.POSITIVE_INFINITY; // I juse use some very big number here
@@ -602,10 +576,10 @@ public class BobTheBuilder extends AdvancedRobot
 	// were hit, calculate the index into our stat array for that factor.
 	private int getFactorIndex(EnemyWave wave, Point2D.Double targetLocation)
 	{
-		double offsetAngle = absoluteBearing(wave.getFireLocation(), targetLocation) - wave.getDirectAngle();
+		double offsetAngle = Helpers.absoluteBearing(wave.getFireLocation(), targetLocation) - wave.getDirectAngle();
 		double factor = Utils.normalRelativeAngle(offsetAngle) / Math.asin(8.0 / wave.getBulletVelocity()) * wave.getDirection();
 
-		return (int) Math.max(0, Math.min(factor * ((BINS - 1) / 2) + ((BINS - 1) / 2), BINS - 1));
+		return (int) Helpers.limit(0, factor * ((Helpers.BINS - 1) / 2) * ((Helpers.BINS - 1) / 2), Helpers.BINS - 1);
 	}
 
 	// Given the EnemyWave that the bullet was on, and the point where we
@@ -614,7 +588,7 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		int index = getFactorIndex(wave, targetLocation);
 
-		for(int i = 0; i < BINS; i++)
+		for(int i = 0; i < Helpers.BINS; i++)
 		{
 			// for the spot bin that we were hit on, add 1;
 			// for the bins next to it, add 1 / 2;
@@ -636,7 +610,7 @@ public class BobTheBuilder extends AdvancedRobot
 		do
 		{
 			moveAngle = wallSmoothing(predictedPosition,
-									  absoluteBearing(surfWave.getFireLocation(),
+									  Helpers.absoluteBearing(surfWave.getFireLocation(),
 									  predictedPosition) + (direction * (Math.PI/2)), direction) - predictedHeading;
 			moveDir = 1;
 
@@ -650,14 +624,14 @@ public class BobTheBuilder extends AdvancedRobot
 
 			// maxTurning is built in like this, you can't turn more then this in one tick
 			maxTurning = Math.PI / 720.0 * (40.0 - 3.0 * Math.abs(predictedVelocity));
-			predictedHeading = Utils.normalRelativeAngle(predictedHeading + Math.max(-maxTurning, Math.min(moveAngle, maxTurning)));
+			predictedHeading = Utils.normalRelativeAngle(predictedHeading + Helpers.limit(-maxTurning, moveAngle, maxTurning));
 
 			// If predictedVelocity and moveDir have different signs you want to slow down, otherwise you want to accelerate
 			predictedVelocity += predictedVelocity * moveDir < 0 ? 2 * moveDir : moveDir;
-			predictedVelocity = Math.max(-8, Math.min(predictedVelocity, 8));
+			predictedVelocity = Helpers.limit(-8, predictedVelocity, 8);
 
 			// calculate the new predicted position
-			predictedPosition = project(predictedPosition, predictedHeading, predictedVelocity);
+			predictedPosition = Helpers.project(predictedPosition, predictedHeading, predictedVelocity);
 
 			counter++;
 
@@ -705,16 +679,11 @@ public class BobTheBuilder extends AdvancedRobot
 	// Returns how much we should turn in order to avoid hitting a wall
 	private double wallSmoothing(Point2D.Double botLocation, double angle, int orientation)
 	{
-		while(!safetyRectangle.contains(project(botLocation, angle, WALL_MARGIN)))
+		while(!safetyRectangle.contains(Helpers.project(botLocation, angle, WALL_MARGIN)))
 		{
 			angle += orientation * 0.05;
 		}
 		return angle;
-	}
-
-	public static Point2D.Double project(Point2D.Double sourceLocation, double angle, double length)
-	{
-		return new Point2D.Double(sourceLocation.x + Math.sin(angle) * length, sourceLocation.y + Math.cos(angle) * length);
 	}
 
 	private double absoluteBearing(double x1, double y1, double x2, double y2)
@@ -742,11 +711,6 @@ public class BobTheBuilder extends AdvancedRobot
 			bearing = 180 - arcSin; // arcsin is negative here, actually 180 + ang
 		}
 		return bearing;
-	}
-
-	private double absoluteBearing(Point2D.Double source, Point2D.Double target)
-	{
-		return Math.atan2(target.x - source.x, target.y - source.y);
 	}
 
 	private double normalizeBearing(double angle)
