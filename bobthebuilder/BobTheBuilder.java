@@ -696,7 +696,7 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		// this.setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
 		double angle = Utils.normalRelativeAngle(goAngle - this.getHeadingRadians());
-		if(Math.abs(angle) > (Math.PI / 2))
+		if(Math.abs(angle) > Math.PI / 2)
 		{
 			if(angle < 0)
 			{
