@@ -139,7 +139,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 			if(mode == RobotModes.MODE_TRACK || mode == RobotModes.MODE_RAM)
 			{
-				this.setTurnRight(enemy.getBearingRadians());
+				this.setTurnRightRadians(enemy.getBearingRadians());
 			}
 			fire();
 			enemy.setCachedVelocity(enemy.getVelocity());
