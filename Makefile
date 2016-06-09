@@ -4,11 +4,11 @@
 
 ROBO = java -Xmx512M -cp rc/libs/robocode.jar robocode.Robocode -cwd rc/
 
-time := $(shell /bin/date +%s)
+time := $(shell date +%s)
 
 BobTheBuilder.jar: bobthebuilder/*.java bobthebuilder/manifest.txt bobthebuilder/*.properties rc/libs/robocode.jar
 	javac -cp rc/libs/robocode.jar bobthebuilder/*.java
-	jar -cfm BobTheBuilder.jar bobthebuilder/manifest.txt bobthebuilder/
+	jar -cfm BobTheBuilder.jar bobthebuilder/manifest.txt bobthebuilder/*.class bobthebuilder/*.properties
 
 rc/robots/BobTheBuilder.jar: BobTheBuilder.jar
 	cp BobTheBuilder.jar rc/robots/BobTheBuilder.jar
@@ -44,5 +44,3 @@ practicegui: rc/libs/robocode.jar rc/robots/BobTheBuilder.jar
 	$(ROBO)
 
 build: BobTheBuilder.jar
-
-cleanall: clean cleandepends

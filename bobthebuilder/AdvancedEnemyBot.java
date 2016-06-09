@@ -48,6 +48,7 @@ public class AdvancedEnemyBot extends EnemyBot
 		y = robot.getY() + Math.cos(absoluteBearing) * e.getDistance();
 
 		lastUpdateTime = robot.getTime();
+		cachedEnergy = e.getEnergy();
 	}
 
 	public double getX()

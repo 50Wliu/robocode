@@ -98,6 +98,7 @@ public class BobTheBuilder extends AdvancedRobot
 			enemies.put(e.getName(), new AdvancedEnemyBot(e, this, id));
 			id++;
 		}
+
 		enemies.get(e.getName()).update(e, this);
 
 		position = new Point2D.Double(this.getX(), this.getY());

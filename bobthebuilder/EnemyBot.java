@@ -5,27 +5,27 @@ import robocode.*;
 public class EnemyBot
 {
 
-	private double bearing;
-	private double distance;
-	private double energy;
-	private double heading;
-	private String name;
-	private double velocity;
+    private double bearing;
+    private double distance;
+    private double energy;
+    private double heading;
+    private String name;
+    private double velocity;
 
-	public EnemyBot()
-	{
-		reset();
-	}
+    public EnemyBot()
+    {
+        reset();
+    }
 
-	public void reset()
-	{
-		bearing = 0.0;
-		distance = 0.0;
-		energy = 0.0;
-		heading = 0.0;
-		name = "";
-		velocity = 0.0;
-	}
+    public void reset()
+    {
+        bearing = 0.0;
+        distance = 0.0;
+        energy = 0.0;
+        heading = 0.0;
+        name = "";
+        velocity = 0.0;
+    }
 
 	final public void update(ScannedRobotEvent e)
 	{
@@ -47,28 +47,28 @@ public class EnemyBot
 		return bearing;
 	}
 
-	public double getDistance()
-	{
-		return distance;
-	}
+    public double getDistance()
+    {
+        return distance;
+    }
 
-	public double getEnergy()
-	{
-		return energy;
-	}
+    public double getEnergy()
+    {
+        return energy;
+    }
 
 	public double getHeadingRadians()
 	{
 		return heading;
 	}
 
-	public String getName()
-	{
-		return name;
-	}
+    public String getName()
+    {
+        return name;
+    }
 
-	public double getVelocity()
-	{
-		return velocity;
-	}
+    public double getVelocity()
+    {
+        return velocity;
+    }
 }
