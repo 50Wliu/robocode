@@ -419,15 +419,15 @@ public class BobTheBuilder extends AdvancedRobot
 					}
 					else
 					{
-						double absoluteBearingToCenter = absoluteBearing(getX(), getY(), getBattleFieldWidth() / 2, getBattleFieldHeight() / 2);
-						double turn = absoluteBearingToCenter - getHeading();
-						this.setTurnRight(normalizeBearing(turn));
+						double absoluteBearingToCenter = Helpers.absoluteBearing(position, new Point2D.Double(this.getBattleFieldWidth() / 2, this.getBattleFieldHeight() / 2));
+						double turn = absoluteBearingToCenter - this.getHeadingRadians();
+						this.setTurnRightRadians(Utils.normalRelativeAngle(turn));
 						this.setAhead(100);
 						return;
 					}
 				}
 
-				this.setTurnRight(normalizeBearing(Math.toDegrees(enemy.getBearingRadians()) + 90 - (15 * moveDirection)));
+				this.setTurnRightRadians(Utils.normalRelativeAngle(enemy.getBearingRadians() + Math.PI / 4 - (Math.PI / 24 * moveDirection)));
 
 				// Strafe rather randomly
 				if(ThreadLocalRandom.current().nextInt(0, 11) == 0)
@@ -481,7 +481,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 		if(mode == RobotModes.MODE_RAM && hitRobot)
 		{
-			this.setTurnGunRight(normalizeBearing(Math.toDegrees(getHeadingRadians() - getGunHeadingRadians() + enemy.getBearingRadians())));
+			this.setTurnGunRightRadians(Utils.normalRelativeAngle(this.getHeadingRadians() - this.getGunHeadingRadians() + enemy.getBearingRadians()));
 			if(this.getGunHeat() == 0 && this.getGunTurnRemaining() < 10)
 			{
 				// We get extra points if we kill them by ramming
@@ -729,49 +729,6 @@ public class BobTheBuilder extends AdvancedRobot
 		while(!safetyRectangle.contains(Helpers.project(position, angle, WALL_MARGIN)))
 		{
 			angle += orientation * 0.05;
-		}
-		return angle;
-	}
-
-	// TODO: Remove in favor of Helpers.absoluteBearing
-	private double absoluteBearing(double x1, double y1, double x2, double y2)
-	{
-		double distanceX = x2 - x1;
-		double distanceY = y2 - y1;
-		double hypotenuse = Math.sqrt(Math.pow(distanceX, 2) + Math.pow(distanceY, 2));
-		double arcSin = Math.toDegrees(Math.asin(distanceX / hypotenuse)); // Yes, we actually do want sin here
-		double bearing = 0;
-
-		if(distanceX >= 0 && distanceY >= 0) // both pos: lower-Left
-		{
-			bearing = arcSin;
-		}
-		else if(distanceX <= 0 && distanceY >= 0) // x neg, y pos: lower-right
-		{
-			bearing = 360 + arcSin; // arcsin is negative here, actually 360 - ang
-		}
-		else if(distanceX >= 0 && distanceY <= 0) // x pos, y neg: upper-left
-		{
-			bearing = 180 - arcSin;
-		}
-		else if(distanceX <= 0 && distanceY <= 0) // both neg: upper-right
-		{
-			bearing = 180 - arcSin; // arcsin is negative here, actually 180 + ang
-		}
-		return bearing;
-	}
-
-	// TODO: Remove this in favor of Utils.NormalRelativeAngle, and if we can't do that, convert it to radians instead
-	private double normalizeBearing(double angle)
-	{
-		while(angle > 180)
-		{
-			angle -= 360;
-		}
-
-		while(angle < -180)
-		{
-			angle += 360;
 		}
 		return angle;
 	}
