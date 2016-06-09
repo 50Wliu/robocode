@@ -37,11 +37,6 @@ public class EnemyBot
 		velocity = e.getVelocity();
 	}
 
-	public boolean shouldTrack(ScannedRobotEvent e, long closer)
-	{
-		return none() || e.getDistance() < getDistance() - 70 || e.getName().equals(getName());
-	}
-
 	public boolean none()
 	{
 		return name.equals("");

@@ -75,7 +75,13 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			this.setDebugProperty("version", VERSION);
 			this.setDebugProperty("mode", mode.toString());
-			if(enemy.none() || getTime() - enemy.getLastUpdateTime() > 5 || getOthers() != 1)
+			if(this.getTime() - enemy.getLastUpdateTime() > 5)
+			{
+				// We have outdated data that really isn't going to help us
+				enemy.reset();
+			}
+
+			if(enemy.none() || getOthers() != 1)
 			{
 				this.setTurnRadarRightRadians(Double.POSITIVE_INFINITY);
 			}
@@ -161,13 +167,13 @@ public class BobTheBuilder extends AdvancedRobot
 			Point2D.Double hitBulletLocation = new Point2D.Double(e.getBullet().getX(), e.getBullet().getY());
 			EnemyWave hitWave = null;
 
-			// look through the EnemysurfWaves, and find one that could've hit us.
+			// look through the EnemyWaves, and find one that could've hit us.
 			for(int i = 0; i < surfWaves.size(); i++)
 			{
 				EnemyWave wave = surfWaves.get(i);
 
 				if(Math.abs(wave.getDistanceTraveled() - position.distance(wave.getFireLocation())) < 50
-				&& Math.abs((20.0 - 3.0 * (e.getBullet().getPower())) - wave.getBulletVelocity()) < 0.001)
+				&& Math.abs(e.getBullet().getVelocity() - wave.getBulletVelocity()) < 0.001)
 				{
 					hitWave = wave;
 					break;
@@ -187,6 +193,38 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			double cachedEnergy = enemies.get(e.getName()).getCachedEnergy();
 			enemies.get(e.getName()).setCachedEnergy(cachedEnergy + 3 * e.getBullet().getPower());
+		}
+	}
+
+	public void onBulletHitBullet(BulletHitBulletEvent e)
+	{
+		// If the surfWaves collection is empty, we must have missed the
+		// detection of this wave somehow.
+		if(!surfWaves.isEmpty())
+		{
+			Point2D.Double hitBulletLocation = new Point2D.Double(e.getHitBullet().getX(), e.getHitBullet().getY());
+			EnemyWave hitWave = null;
+
+			// look through the EnemyWaves, and find one that could've hit us.
+			for(int i = 0; i < surfWaves.size(); i++)
+			{
+				EnemyWave wave = surfWaves.get(i);
+
+				if(Math.abs(wave.getDistanceTraveled() - hitBulletLocation.distance(wave.getFireLocation())) < 5
+				&& Math.abs(e.getHitBullet().getVelocity() - wave.getBulletVelocity()) < 0.001)
+				{
+					hitWave = wave;
+					break;
+				}
+			}
+
+			if(hitWave != null)
+			{
+				logHit(hitWave, hitBulletLocation);
+
+				// We can remove this wave now, of course.
+				surfWaves.remove(surfWaves.lastIndexOf(hitWave));
+			}
 		}
 	}
 
@@ -222,6 +260,12 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			this.setTurnRight(e.getBearing());
 			this.setAhead(40);
+		}
+
+		if(enemies.containsKey(e.getName()))
+		{
+			double cachedEnergy = enemies.get(e.getName()).getCachedEnergy();
+			enemies.get(e.getName()).setCachedEnergy(cachedEnergy - 0.6); // Robots lose 0.6 energy / collision
 		}
 	}
 
@@ -546,7 +590,8 @@ public class BobTheBuilder extends AdvancedRobot
 			double distance = (this.getTime() - wave.getFireTime()) * wave.getBulletVelocity();
 
 			wave.setDistanceTraveled(distance);
-			if(distance > position.distance(wave.getFireLocation()) + 50)
+			// 'tis past us now
+			if(distance > position.distance(wave.getFireLocation()) + Helpers.ROBOT_SIZE)
 			{
 				surfWaves.remove(i);
 				i--;
@@ -597,6 +642,7 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 	}
 
+	// Where will we be when the given wave hits us?
 	private Point2D.Double predictPosition(EnemyWave surfWave, int direction)
 	{
 		Point2D.Double predictedPosition = (Point2D.Double) position.clone();
@@ -611,7 +657,7 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			moveAngle = wallSmoothing(predictedPosition,
 									  Helpers.absoluteBearing(surfWave.getFireLocation(),
-									  predictedPosition) + (direction * (Math.PI/2)), direction) - predictedHeading;
+									  predictedPosition) + (direction * (Math.PI / 2)), direction) - predictedHeading;
 			moveDir = 1;
 
 			if(Math.cos(moveAngle) < 0)
@@ -626,11 +672,11 @@ public class BobTheBuilder extends AdvancedRobot
 			maxTurning = Math.PI / 720.0 * (40.0 - 3.0 * Math.abs(predictedVelocity));
 			predictedHeading = Utils.normalRelativeAngle(predictedHeading + Helpers.limit(-maxTurning, moveAngle, maxTurning));
 
-			// If predictedVelocity and moveDir have different signs you want to slow down, otherwise you want to accelerate
+			// If predictedVelocity and moveDir have different signs slow down, otherwise accelerate
 			predictedVelocity += predictedVelocity * moveDir < 0 ? 2 * moveDir : moveDir;
 			predictedVelocity = Helpers.limit(-8, predictedVelocity, 8);
 
-			// calculate the new predicted position
+			// Calculate the new predicted position
 			predictedPosition = Helpers.project(predictedPosition, predictedHeading, predictedVelocity);
 
 			counter++;
