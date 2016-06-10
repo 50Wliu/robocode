@@ -415,7 +415,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 				double heading = Utils.normalRelativeAngle(this.getHeadingRadians() + (moveDirection == 1 ? 0 : Math.PI));
 				double goAngle = Utils.normalRelativeAngle(enemy.getBearingRadians() + Math.PI / 4 - (Math.PI / 24 * moveDirection));
-				double wallSmoothingAngle = Utils.normalRelativeAngle(wallSmoothing(position, heading, moveDirection));
+				double wallSmoothingAngle = heading - Utils.normalRelativeAngle(wallSmoothing(position, heading, moveDirection));
 				if(wallSmoothingAngle != 0.0)
 				{
 					this.setTurnRightRadians(wallSmoothingAngle);
@@ -733,6 +733,6 @@ public class BobTheBuilder extends AdvancedRobot
 		{
 			moveDirection *= -1;
 		}
-		return turn;
+		return angle;
 	}
 }
