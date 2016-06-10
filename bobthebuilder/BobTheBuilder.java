@@ -24,7 +24,6 @@ public class BobTheBuilder extends AdvancedRobot
 	private ArrayList<Integer> surfDirections;
 	private ArrayList<Double> surfAbsoluteBearings;
 	private static double surfStats[] = new double[Helpers.BINS];
-	private int id = 0; // Unimplemented
 	private int moveDirection = 1;
 	private int enemyDirection = 1;
 	private int wallMargin = 50;
@@ -99,8 +98,7 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		if(!enemies.containsKey(e.getName()))
 		{
-			enemies.put(e.getName(), new AdvancedEnemyBot(e, this, id));
-			id++;
+			enemies.put(e.getName(), new AdvancedEnemyBot(e, this));
 		}
 
 		enemies.get(e.getName()).update(e, this);
