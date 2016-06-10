@@ -7,7 +7,6 @@ import java.awt.geom.*;
 public class BulletWave extends Condition
 {
 	private static final double MAX_ESCAPE_ANGLE = 0.7;
-	private static final int MAX_SCAN_DISTANCE = 1200;
 	private static final int INDEXES = 5;
 	private static final int MIDDLE_BIN = (Helpers.BINS - 1) / 2;
 	private static final double BIN_WIDTH = MAX_ESCAPE_ANGLE / (double) MIDDLE_BIN;
@@ -30,7 +29,7 @@ public class BulletWave extends Condition
 		this.direction = direction;
 
 		// Update segmentations
-		int distanceIndex = (int) (enemy.getDistance() / (MAX_SCAN_DISTANCE / INDEXES));
+		int distanceIndex = (int) (enemy.getDistance() / (Rules.RADAR_SCAN_RADIUS / INDEXES));
 		int velocityIndex = (int) Math.abs(enemy.getVelocity() / 2);
 		int cachedVelocityIndex = (int) Math.abs(enemy.getCachedVelocity() / 2);
 		buffer = statBuffers[distanceIndex][velocityIndex][cachedVelocityIndex];
@@ -38,7 +37,7 @@ public class BulletWave extends Condition
 
 	public boolean test()
 	{
-		distanceTraveled += Helpers.bulletVelocity(power);
+		distanceTraveled += Rules.getBulletSpeed(power);
 		if(distanceTraveled > position.distance(enemyPosition) - Helpers.ROBOT_SIZE)
 		{
 			buffer[currentBin()]++;

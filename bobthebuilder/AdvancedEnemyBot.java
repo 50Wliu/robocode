@@ -4,7 +4,6 @@ import robocode.*;
 
 public class AdvancedEnemyBot extends EnemyBot
 {
-	private int id; // Unimplemented
 	private double x;
 	private double y;
 	private double cachedEnergy;
@@ -16,11 +15,10 @@ public class AdvancedEnemyBot extends EnemyBot
 		reset();
 	}
 
-	public AdvancedEnemyBot(ScannedRobotEvent event, AdvancedRobot robot, int id)
+	public AdvancedEnemyBot(ScannedRobotEvent event, AdvancedRobot robot)
 	{
 		reset();
 		update(event, robot);
-		this.id = id;
 	}
 
 	public void reset()

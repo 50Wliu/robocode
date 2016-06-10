@@ -13,7 +13,7 @@ import java.awt.geom.*;
 public class BobTheBuilder extends AdvancedRobot
 {
 	private static final int WALL_MARGIN = 150;
-	private static final String VERSION = "0.2.0";
+	private static final String VERSION = "0.2.1";
 
 	private HashMap<String, AdvancedEnemyBot> enemies;
 	private AdvancedEnemyBot enemy;
@@ -24,7 +24,6 @@ public class BobTheBuilder extends AdvancedRobot
 	private ArrayList<Integer> surfDirections;
 	private ArrayList<Double> surfAbsoluteBearings;
 	private static double surfStats[] = new double[Helpers.BINS];
-	private int id = 0; // Unimplemented
 	private int moveDirection = 1;
 	private int enemyDirection = 1;
 	private int wallMargin = 50;
@@ -99,8 +98,7 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		if(!enemies.containsKey(e.getName()))
 		{
-			enemies.put(e.getName(), new AdvancedEnemyBot(e, this, id));
-			id++;
+			enemies.put(e.getName(), new AdvancedEnemyBot(e, this));
 		}
 
 		enemies.get(e.getName()).update(e, this);
@@ -108,16 +106,16 @@ public class BobTheBuilder extends AdvancedRobot
 		double lateralVelocity = this.getVelocity() * Math.sin(e.getBearingRadians());
 		double absoluteBearing = e.getBearingRadians() + this.getHeadingRadians();
 
-		surfDirections.add(0, new Integer((lateralVelocity >= 0 ? 1 : -1)));
+		surfDirections.add(0, new Integer(((lateralVelocity >= 0) ? 1 : -1)));
 		surfAbsoluteBearings.add(0, new Double(absoluteBearing + Math.PI));
 
 		double power = enemies.get(e.getName()).getCachedEnergy() - e.getEnergy();
-		if(power > 0.09 && power < 3.01 && surfDirections.size() > 2) // Doubles are imprecise so don't compare equal to
+		if(power > Rules.MIN_BULLET_POWER - 0.01 && power < Rules.MAX_BULLET_POWER + 0.01 && surfDirections.size() > 2) // Doubles are imprecise so don't compare equal to
 		{
 			EnemyWave wave = new EnemyWave();
 			wave.setFireTime(this.getTime() - 1);
-			wave.setBulletVelocity(Helpers.bulletVelocity(power));
-			wave.setDistanceTraveled(Helpers.bulletVelocity(power));
+			wave.setBulletVelocity(Rules.getBulletSpeed(power));
+			wave.setDistanceTraveled(Rules.getBulletSpeed(power));
 			wave.setDirection(surfDirections.get(2).intValue());
 			wave.setDirectAngle(surfAbsoluteBearings.get(2).doubleValue());
 			wave.setFireLocation((Point2D.Double) enemyPosition.clone());
@@ -156,8 +154,7 @@ public class BobTheBuilder extends AdvancedRobot
 		if(enemies.containsKey(e.getName()))
 		{
 			double cachedEnergy = enemies.get(e.getName()).getCachedEnergy();
-			double power = e.getBullet().getPower();
-			enemies.get(e.getName()).setCachedEnergy(cachedEnergy - (4 * power + Math.max(0, 2 * (power - 1))));
+			enemies.get(e.getName()).setCachedEnergy(cachedEnergy - Rules.getBulletDamage(e.getBullet().getPower()));
 		}
 	}
 
@@ -195,7 +192,7 @@ public class BobTheBuilder extends AdvancedRobot
 		if(enemies.containsKey(e.getName()))
 		{
 			double cachedEnergy = enemies.get(e.getName()).getCachedEnergy();
-			enemies.get(e.getName()).setCachedEnergy(cachedEnergy + 3 * e.getBullet().getPower());
+			enemies.get(e.getName()).setCachedEnergy(cachedEnergy + Rules.getBulletHitBonus(e.getBullet().getPower()));
 		}
 	}
 
@@ -268,7 +265,8 @@ public class BobTheBuilder extends AdvancedRobot
 		if(enemies.containsKey(e.getName()))
 		{
 			double cachedEnergy = enemies.get(e.getName()).getCachedEnergy();
-			enemies.get(e.getName()).setCachedEnergy(cachedEnergy - 0.6); // Robots lose 0.6 energy / collision
+			enemies.get(e.getName()).setCachedEnergy(cachedEnergy - Rules.ROBOT_HIT_DAMAGE);
+			// TODO: Robots also gain Rules.ROBOT_HIT_BONUS on ramming?
 		}
 	}
 
@@ -532,7 +530,7 @@ public class BobTheBuilder extends AdvancedRobot
 				}
 			}
 
-			double power = Math.min(500 / enemy.getDistance(), 3);
+			double power = Math.min(500 / enemy.getDistance(), Rules.MAX_BULLET_POWER);
 			BulletWave wave = new BulletWave(this, enemy, position, absoluteBearing, power, enemyDirection);
 			BulletWave.enemyPosition = Helpers.project(position, absoluteBearing, enemy.getDistance());
 
@@ -618,9 +616,9 @@ public class BobTheBuilder extends AdvancedRobot
 	private int getFactorIndex(EnemyWave wave, Point2D.Double targetLocation)
 	{
 		double offsetAngle = Helpers.absoluteBearing(wave.getFireLocation(), targetLocation) - wave.getDirectAngle();
-		double factor = Utils.normalRelativeAngle(offsetAngle) / Math.asin(8.0 / wave.getBulletVelocity()) * wave.getDirection();
+		double factor = Utils.normalRelativeAngle(offsetAngle) / Math.asin(Rules.MAX_VELOCITY / wave.getBulletVelocity()) * wave.getDirection();
 
-		return (int) Helpers.limit(0, factor * ((Helpers.BINS - 1) / 2) * ((Helpers.BINS - 1) / 2), Helpers.BINS - 1);
+		return (int) Helpers.limit(0, (factor * ((Helpers.BINS - 1) / 2)) + ((Helpers.BINS - 1) / 2), Helpers.BINS - 1);
 	}
 
 	// Given the EnemyWave that the bullet was on, and the point where we
@@ -663,14 +661,11 @@ public class BobTheBuilder extends AdvancedRobot
 			}
 
 			moveAngle = Utils.normalRelativeAngle(moveAngle);
-
-			// maxTurning is built in like this, you can't turn more then this in one tick
-			maxTurning = Math.PI / 720.0 * (40.0 - 3.0 * Math.abs(predictedVelocity));
-			predictedHeading = Utils.normalRelativeAngle(predictedHeading + Helpers.limit(-maxTurning, moveAngle, maxTurning));
+			predictedHeading = Utils.normalRelativeAngle(predictedHeading + Helpers.limit(-Rules.getTurnRateRadians(this.getVelocity()), moveAngle, Rules.getTurnRateRadians(this.getVelocity())));
 
 			// If predictedVelocity and moveDir have different signs slow down, otherwise accelerate
-			predictedVelocity += predictedVelocity * moveDir < 0 ? 2 * moveDir : moveDir;
-			predictedVelocity = Helpers.limit(-8, predictedVelocity, 8);
+			predictedVelocity += (predictedVelocity * moveDir < 0) ? Rules.DECELERATION * moveDir : Rules.ACCELERATION * moveDir;
+			predictedVelocity = Helpers.limit(-Rules.MAX_VELOCITY, predictedVelocity, Rules.MAX_VELOCITY);
 
 			// Calculate the new predicted position
 			predictedPosition = Helpers.project(predictedPosition, predictedHeading, predictedVelocity);
