@@ -21,11 +21,6 @@ public class Helpers
 		return new Point2D.Double(position.getX() + Math.sin(angle) * length, position.getY() + Math.cos(angle) * length);
 	}
 
-	public static double bulletVelocity(double power)
-	{
-		return 20 - 3 * power;
-	}
-
 	public static double limit(double min, double value, double max)
 	{
 		return Math.max(min, Math.min(value, max));
