@@ -33,10 +33,22 @@ cleanall: cleandepends cleanbattles clean
 test: rc/robots/BobTheBuilder.jar rc/libs/robocode.jar
 	mkdir -p tests/
 	$(ROBO) -nodisplay -battle battles/test1.battle \
-		-recordxml tests/B$(time).xml -results tests/R$(time).txt
-	echo " == Results /battles/test1.battle $(time)  == " && \
-		cat tests/R$(time).txt
-	awk 'BEGIN {FS=" "};NR==3{print $$2}' tests/R$(time).txt | \
+		-results tests/R$(time)_1.txt
+	$(ROBO) -nodisplay -battle battles/test2.battle \
+		-results tests/R$(time)_2.txt
+	$(ROBO) -nodisplay -battle battles/test3.battle \
+		-results tests/R$(time)_3.txt
+	@echo " == Results /battles/test1.battle $(time)  == " && \
+		cat tests/R$(time)_1.txt
+	@echo " == Results /battles/test2.battle $(time)  == " && \
+		cat tests/R$(time)_2.txt
+	@echo " == Results /battles/test3.battle $(time)  == " && \
+		cat tests/R$(time)_3.txt
+	awk 'BEGIN {FS=" "};NR==3{print $$2}' tests/R$(time)_1.txt | \
+		grep -q "bobthebuilder.BobTheBuilder"
+	awk 'BEGIN {FS=" "};NR==3{print $$2}' tests/R$(time)_2.txt | \
+		grep -q "bobthebuilder.BobTheBuilder"
+	awk 'BEGIN {FS=" "};NR==3{print $$2}' tests/R$(time)_3.txt | \
 		grep -q "bobthebuilder.BobTheBuilder"
 
 practicegui: rc/libs/robocode.jar rc/robots/BobTheBuilder.jar

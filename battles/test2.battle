@@ -1,0 +1,6 @@
+#
+# Test Battle 2
+#  (BobTheBuilder should place 1st)
+#
+
+robocode.battle.selectedRobots = bobthebuilder.BobTheBuilder*, bobthebuilder.BobTheBuilder, sample.Walls
