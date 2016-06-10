@@ -3,4 +3,4 @@
 #  (BobTheBuilder should place 1st)
 #
 
-robocode.battle.selectedRobots = bobthebuilder.BobTheBuilder*, bobthebuilder.BobTheBuilder, sample.Corners
+robocode.battle.selectedRobots = bobthebuilder.BobTheBuilder*, bobthebuilder.BobTheBuilder, sample.Crazy
