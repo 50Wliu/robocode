@@ -13,7 +13,7 @@ import java.awt.geom.*;
 public class BobTheBuilder extends AdvancedRobot
 {
 	private static final int WALL_MARGIN = 150;
-	private static final String VERSION = "0.2.0";
+	private static final String VERSION = "0.2.1";
 
 	private HashMap<String, AdvancedEnemyBot> enemies;
 	private AdvancedEnemyBot enemy;
@@ -106,7 +106,7 @@ public class BobTheBuilder extends AdvancedRobot
 		double lateralVelocity = this.getVelocity() * Math.sin(e.getBearingRadians());
 		double absoluteBearing = e.getBearingRadians() + this.getHeadingRadians();
 
-		surfDirections.add(0, new Integer((lateralVelocity >= 0 ? 1 : -1)));
+		surfDirections.add(0, new Integer(((lateralVelocity >= 0) ? 1 : -1)));
 		surfAbsoluteBearings.add(0, new Double(absoluteBearing + Math.PI));
 
 		double power = enemies.get(e.getName()).getCachedEnergy() - e.getEnergy();
@@ -618,7 +618,7 @@ public class BobTheBuilder extends AdvancedRobot
 		double offsetAngle = Helpers.absoluteBearing(wave.getFireLocation(), targetLocation) - wave.getDirectAngle();
 		double factor = Utils.normalRelativeAngle(offsetAngle) / Math.asin(Rules.MAX_VELOCITY / wave.getBulletVelocity()) * wave.getDirection();
 
-		return (int) Helpers.limit(0, factor * ((Helpers.BINS - 1) / 2) * ((Helpers.BINS - 1) / 2), Helpers.BINS - 1);
+		return (int) Helpers.limit(0, (factor * ((Helpers.BINS - 1) / 2)) + ((Helpers.BINS - 1) / 2), Helpers.BINS - 1);
 	}
 
 	// Given the EnemyWave that the bullet was on, and the point where we
@@ -664,7 +664,7 @@ public class BobTheBuilder extends AdvancedRobot
 			predictedHeading = Utils.normalRelativeAngle(predictedHeading + Helpers.limit(-Rules.getTurnRateRadians(this.getVelocity()), moveAngle, Rules.getTurnRateRadians(this.getVelocity())));
 
 			// If predictedVelocity and moveDir have different signs slow down, otherwise accelerate
-			predictedVelocity += predictedVelocity * moveDir < 0 ? Rules.DECELERATION * moveDir : Rules.ACCELERATION * moveDir;
+			predictedVelocity += (predictedVelocity * moveDir < 0) ? Rules.DECELERATION * moveDir : Rules.ACCELERATION * moveDir;
 			predictedVelocity = Helpers.limit(-Rules.MAX_VELOCITY, predictedVelocity, Rules.MAX_VELOCITY);
 
 			// Calculate the new predicted position
