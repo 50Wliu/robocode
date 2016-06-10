@@ -4,7 +4,7 @@ import robocode.*;
 import robocode.util.Utils;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyEvent.*;
@@ -31,6 +31,7 @@ public class BobTheBuilder extends AdvancedRobot
 	private boolean tooCloseToWall = false;
 	private boolean hitRobot = false;
 	private boolean lockMode = false;
+	private static Random rand = new Random();
 
 	private enum RobotModes
 	{
@@ -85,6 +86,9 @@ public class BobTheBuilder extends AdvancedRobot
 			{
 				this.setTurnRadarRightRadians(Double.POSITIVE_INFINITY);
 			}
+
+			position = new Point2D.Double(this.getX(), this.getY());
+
 			move();
 			// fire();
 			execute();
@@ -100,8 +104,6 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 
 		enemies.get(e.getName()).update(e, this);
-
-		position = new Point2D.Double(this.getX(), this.getY());
 
 		double lateralVelocity = this.getVelocity() * Math.sin(e.getBearingRadians());
 		double absoluteBearing = e.getBearingRadians() + this.getHeadingRadians();
@@ -233,7 +235,7 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		System.out.println("Wall hit at (" + getX() + ", " + getY() + "); bearing was " + e.getBearing() + " degrees");
 		// Move immediately so that we don't generate more HitWallEvents while turning
-		if(e.getBearing() > - 90 && e.getBearing() <= 90)
+		if(e.getBearingRadians() > -Math.PI / 2 && e.getBearingRadians() <= Math.PI / 2)
 		{
 			this.back(10);
 		}
@@ -411,26 +413,20 @@ public class BobTheBuilder extends AdvancedRobot
 					}
 				}
 
-				if(tooCloseToWall) // Move towards the center of the battlefield
+				double heading = Utils.normalRelativeAngle(this.getHeadingRadians() + (moveDirection == 1 ? 0 : Math.PI));
+				double goAngle = Utils.normalRelativeAngle(enemy.getBearingRadians() + Math.PI / 4 - (Math.PI / 24 * moveDirection));
+				double wallSmoothingAngle = Utils.normalRelativeAngle(wallSmoothing(position, heading, moveDirection));
+				if(wallSmoothingAngle != 0.0)
 				{
-					if(this.getDistanceRemaining() == 0)
-					{
-						tooCloseToWall = false;
-					}
-					else
-					{
-						double absoluteBearingToCenter = Helpers.absoluteBearing(position, new Point2D.Double(this.getBattleFieldWidth() / 2, this.getBattleFieldHeight() / 2));
-						double turn = absoluteBearingToCenter - this.getHeadingRadians();
-						this.setTurnRightRadians(Utils.normalRelativeAngle(turn));
-						this.setAhead(100);
-						return;
-					}
+					this.setTurnRightRadians(wallSmoothingAngle);
+				}
+				else
+				{
+					this.setTurnRightRadians(goAngle);
 				}
 
-				this.setTurnRightRadians(Utils.normalRelativeAngle(enemy.getBearingRadians() + Math.PI / 4 - (Math.PI / 24 * moveDirection)));
-
 				// Strafe rather randomly
-				if(ThreadLocalRandom.current().nextInt(0, 11) == 0)
+				if(rand.nextInt(21) == 0)
 				{
 					moveDirection *= -1;
 				}
@@ -537,7 +533,6 @@ public class BobTheBuilder extends AdvancedRobot
 			}
 
 			double power = Math.min(500 / enemy.getDistance(), 3);
-			Point2D.Double position = new Point2D.Double(this.getX(), this.getY());
 			BulletWave wave = new BulletWave(this, enemy, position, absoluteBearing, power, enemyDirection);
 			BulletWave.enemyPosition = Helpers.project(position, absoluteBearing, enemy.getDistance());
 
@@ -726,10 +721,18 @@ public class BobTheBuilder extends AdvancedRobot
 	// Returns how much we should turn in order to avoid hitting a wall
 	private double wallSmoothing(Point2D.Double position, double angle, int orientation)
 	{
+		double turn = 0.0;
 		while(!safetyRectangle.contains(Helpers.project(position, angle, WALL_MARGIN)))
 		{
 			angle += orientation * 0.05;
+			turn += orientation * 0.05;
 		}
-		return angle;
+
+		// If we're going to make a more-than-perpendicular turn or the turn is too tight, reverse direction
+		if(Math.abs(turn) >= Math.PI / 2 || Math.abs(turn) >= Rules.getTurnRateRadians(this.getVelocity()))
+		{
+			moveDirection *= -1;
+		}
+		return turn;
 	}
 }
