@@ -233,7 +233,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 	public void onHitWall(HitWallEvent e)
 	{
-		System.out.println("Wall hit at (" + getX() + ", " + getY() + "); bearing was " + e.getBearing() + " degrees");
+		System.out.println("Wall hit at (" + getX() + ", " + getY() + "); bearing was " + e.getBearingRadians() + " rads");
 		// Move immediately so that we don't generate more HitWallEvents while turning
 		if(e.getBearingRadians() > -Math.PI / 2 && e.getBearingRadians() <= Math.PI / 2)
 		{
@@ -255,13 +255,13 @@ public class BobTheBuilder extends AdvancedRobot
 			// TODO: Calculate the bearing to the wall even if we haven't hit a wall
 			if(tooCloseToWall && !this.getHitWallEvents().isEmpty())
 			{
-				this.turnRight((this.getHitWallEvents().lastElement().getBearing() + e.getBearing()) / 2);
+				this.turnRightRadians((this.getHitWallEvents().lastElement().getBearingRadians() + e.getBearingRadians()) / 2);
 			}
-			this.setAhead(e.getBearing() > - 90 && e.getBearing() <= 90 ? -100 : 100);
+			this.setAhead(e.getBearingRadians() > -Math.PI / 2 && e.getBearingRadians() <= Math.PI / 2 ? -100 : 100);
 		}
 		else // Ram them!
 		{
-			this.setTurnRight(e.getBearing());
+			this.setTurnRightRadians(e.getBearingRadians());
 			this.setAhead(40);
 		}
 
@@ -339,7 +339,7 @@ public class BobTheBuilder extends AdvancedRobot
 			this.setMaxVelocity(0);
 			for(int i = 0; i < 10; i++)
 			{
-				this.setTurnGunRight(360 * 5);
+				this.setTurnGunRightRadians(2 * Math.PI * 5);
 			}
 		}
 	}
