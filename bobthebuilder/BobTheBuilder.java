@@ -13,7 +13,7 @@ import java.awt.geom.*;
 public class BobTheBuilder extends AdvancedRobot
 {
 	private static final int WALL_MARGIN = 150;
-	private static final String VERSION = "0.2.1";
+	private static final String VERSION = "0.2.2";
 
 	private HashMap<String, AdvancedEnemyBot> enemies;
 	private AdvancedEnemyBot enemy;
@@ -528,6 +528,13 @@ public class BobTheBuilder extends AdvancedRobot
 				{
 					enemyDirection = 1;
 				}
+			}
+
+			if(enemy.getEnergy() <= 0) // Enemy is disabled, just shoot at their current location
+			{
+				this.setTurnRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians()));
+				this.setFire(0.1);
+				return;
 			}
 
 			double power = Math.min(500 / enemy.getDistance(), Rules.MAX_BULLET_POWER);
