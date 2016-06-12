@@ -13,7 +13,7 @@ import java.awt.geom.*;
 public class BobTheBuilder extends AdvancedRobot
 {
 	private static final int WALL_MARGIN = 150;
-	private static final String VERSION = "0.2.2";
+	private static final String VERSION = "0.2.3";
 
 	private HashMap<String, AdvancedEnemyBot> enemies;
 	private AdvancedEnemyBot enemy;
@@ -411,24 +411,19 @@ public class BobTheBuilder extends AdvancedRobot
 					}
 				}
 
-				double heading = Utils.normalRelativeAngle(this.getHeadingRadians() + (moveDirection == 1 ? 0 : Math.PI));
-				double goAngle = Utils.normalRelativeAngle(enemy.getBearingRadians() + Math.PI / 4 - (Math.PI / 24 * moveDirection));
-				double wallSmoothingAngle = heading - Utils.normalRelativeAngle(wallSmoothing(position, heading, moveDirection));
-				if(wallSmoothingAngle != 0.0)
-				{
-					this.setTurnRightRadians(wallSmoothingAngle);
-				}
-				else
-				{
-					this.setTurnRightRadians(goAngle);
-				}
-
 				// Strafe rather randomly
 				if(rand.nextInt(21) == 0)
 				{
 					moveDirection *= -1;
 				}
-				this.setAhead(1000 * moveDirection);
+
+				double heading = this.getHeadingRadians() + (moveDirection == 1 ? 0 : Math.PI);
+				double goAngle = enemy.getBearingRadians() + Math.PI / 2 - (Math.PI / 12 * moveDirection);
+				goAngle = Helpers.limit(-Rules.getTurnRateRadians(this.getVelocity()), goAngle, Rules.getTurnRateRadians(this.getVelocity()));
+				double wallSmoothingAngle = wallSmoothing(position, heading + goAngle, moveDirection);
+				this.setTurnRightRadians(Utils.normalRelativeAngle(wallSmoothingAngle - heading));
+
+				this.setAhead(100 * moveDirection);
 				break;
 			}
 			case MODE_TRACK:
@@ -720,20 +715,55 @@ public class BobTheBuilder extends AdvancedRobot
 		setAhead(100 * moveDirection);
 	}
 
-	// Returns how much we should turn in order to avoid hitting a wall
-	private double wallSmoothing(Point2D.Double position, double angle, int orientation)
+	/**
+	 * Returns the angle we should travel at in order to avoid hitting a wall
+	 *
+	 * @param position The robot's position
+	 * @param angle The angle that the robot would have traveled in without any wall smoothing
+	 * @param direction 1 for clockwise rotation, -1 for counterclockwise rotation
+	 *
+	 * @returns The new angle based on how much wall smoothing is needed
+	 *
+	 * @author Voidious
+	 */
+	private double wallSmoothing(Point2D.Double position, double angle, int direction)
 	{
-		double turn = 0.0;
-		while(!safetyRectangle.contains(Helpers.project(position, angle, WALL_MARGIN)))
-		{
-			angle += orientation * 0.05;
-			turn += orientation * 0.05;
-		}
+		double x = position.getX();
+		double y = position.getY();
 
-		// If we're going to make a more-than-perpendicular turn or the turn is too tight, reverse direction
-		if(Math.abs(turn) >= Math.PI / 2 || Math.abs(turn) >= Rules.getTurnRateRadians(this.getVelocity()))
+		angle += 4 * Math.PI; // Make sure our angle is positive
+
+		double testX = x + (Math.sin(angle) * WALL_MARGIN);
+		double testY = y + (Math.cos(angle) * WALL_MARGIN);
+		double wallDistanceX = Math.min(x - Helpers.ROBOT_SIZE, this.getBattleFieldWidth() - x - Helpers.ROBOT_SIZE);
+		double wallDistanceY = Math.min(y - Helpers.ROBOT_SIZE, this.getBattleFieldHeight() - y - Helpers.ROBOT_SIZE);
+		double testDistanceX = Math.min(testX - Helpers.ROBOT_SIZE, this.getBattleFieldWidth() - testX - Helpers.ROBOT_SIZE);
+		double testDistanceY = Math.min(testY - Helpers.ROBOT_SIZE, this.getBattleFieldHeight() - testY - Helpers.ROBOT_SIZE);
+
+		double distance = 0;
+		double iterations = 0; // To prevent an infinite loop...just in case
+
+		while(!safetyRectangle.contains(testX, testY) && iterations < 25)
 		{
-			moveDirection *= -1;
+			if(testDistanceY < 0 && testDistanceY < testDistanceX) // We're too close to the north or south wall
+			{
+				angle = ((int) ((angle + Math.PI / 2) / Math.PI)) * Math.PI;
+				distance = Math.abs(wallDistanceY);
+			}
+			else if (testDistanceX < 0 && testDistanceX <= testDistanceY) // Too close to the east/west wall
+			{
+				angle = (((int) (angle / Math.PI)) * Math.PI) + Math.PI / 2;
+				distance = Math.abs(wallDistanceX);
+			}
+
+			angle += direction * (Math.abs(Math.acos(distance / WALL_MARGIN)) + 0.005); // 0.005 determines how close to the wall we get
+
+			testX = x + (Math.sin(angle) * WALL_MARGIN);
+			testY = y + (Math.cos(angle) * WALL_MARGIN);
+			testDistanceX = Math.min(testX - Helpers.ROBOT_SIZE, this.getBattleFieldWidth() - testX - Helpers.ROBOT_SIZE);
+			testDistanceY = Math.min(testY - Helpers.ROBOT_SIZE, this.getBattleFieldHeight() - testY - Helpers.ROBOT_SIZE);
+
+			iterations++;
 		}
 		return angle;
 	}
