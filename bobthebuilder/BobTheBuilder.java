@@ -337,6 +337,7 @@ public class BobTheBuilder extends AdvancedRobot
 			this.setMaxVelocity(0);
 			for(int i = 0; i < 10; i++)
 			{
+				this.setTurnLeftRadians(2 * Math.PI * 5);
 				this.setTurnGunRightRadians(2 * Math.PI * 5);
 			}
 		}
@@ -527,7 +528,7 @@ public class BobTheBuilder extends AdvancedRobot
 
 			if(enemy.getEnergy() <= 0) // Enemy is disabled, just shoot at their current location
 			{
-				this.setTurnRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians()));
+				this.setTurnGunRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians()));
 				this.setFire(0.1);
 				return;
 			}
