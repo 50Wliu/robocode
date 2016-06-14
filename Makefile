@@ -6,9 +6,9 @@ ROBO = java -Xmx512M -cp rc/libs/robocode.jar robocode.Robocode -cwd rc/
 
 time := $(shell date +%s)
 
-BobTheBuilder.jar: bobthebuilder/*.java bobthebuilder/manifest.txt bobthebuilder/*.properties rc/libs/robocode.jar
-	javac -cp rc/libs/robocode.jar bobthebuilder/*.java
-	jar -cfm BobTheBuilder.jar bobthebuilder/manifest.txt bobthebuilder/*.class bobthebuilder/*.properties
+BobTheBuilder.jar: exam2016/*.java exam2016/manifest.txt exam2016/*.properties rc/libs/robocode.jar
+	javac -cp rc/libs/robocode.jar exam2016/*.java
+	jar -cfm BobTheBuilder.jar exam2016/manifest.txt exam2016/*.class exam2016/*.properties
 
 rc/robots/BobTheBuilder.jar: BobTheBuilder.jar
 	cp BobTheBuilder.jar rc/robots/BobTheBuilder.jar
@@ -26,7 +26,7 @@ cleandepends:
 cleanbattles:
 	rm -rf tests/
 clean:
-	rm -f bobthebuilder/*.class
+	rm -f exam2016/*.class
 	rm -f BobTheBuilder.jar
 cleanall: cleandepends cleanbattles clean
 
