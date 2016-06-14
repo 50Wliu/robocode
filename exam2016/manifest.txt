@@ -1,2 +1,2 @@
 Manifest-Version: 1.0
-robots: bobthebuilder.BobTheBuilder
+robots: exam2016.BobTheBuilder
