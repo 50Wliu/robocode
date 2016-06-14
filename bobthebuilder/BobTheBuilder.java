@@ -1,3 +1,13 @@
+/*
+Created by Winston Liu and Eric Roberts for AP Computer Science
+
+Credits:
+PEZ - GuessFactor, BulletWave
+Voidious - WaveSurfing, EnemyWave
+Mark Whitley - AdvancedEnemyBot, EnemyBot
+Voidious (and probably others) - Helpers
+*/
+
 package bobthebuilder;
 
 import robocode.*;
