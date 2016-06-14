@@ -8,7 +8,7 @@ Mark Whitley - AdvancedEnemyBot, EnemyBot
 Voidious (and probably others) - Helpers
 */
 
-package bobthebuilder;
+package exam2016;
 
 import robocode.*;
 import robocode.util.Utils;
@@ -21,7 +21,7 @@ import java.awt.geom.*;
 public class BobTheBuilder extends AdvancedRobot
 {
 	private static final int WALL_MARGIN = 150;
-	private static final String VERSION = "0.2.3";
+	private static final String VERSION = "0.2.4";
 
 	private HashMap<String, AdvancedEnemyBot> enemies;
 	private AdvancedEnemyBot enemy;

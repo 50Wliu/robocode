@@ -1,6 +1,6 @@
 /* Helper functions */
 
-package bobthebuilder;
+package exam2016;
 
 import robocode.*;
 import robocode.util.Utils;
