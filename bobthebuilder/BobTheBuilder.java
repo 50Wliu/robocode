@@ -353,13 +353,6 @@ public class BobTheBuilder extends AdvancedRobot
 
 	private void move()
 	{
-		EnemyWave surfWave = getClosestSurfableWave();
-
-		if(surfWave != null)
-		{
-			return;
-		}
-
 		switch(mode)
 		{
 			/*case MODE_ENCIRCLE:
@@ -400,6 +393,13 @@ public class BobTheBuilder extends AdvancedRobot
 			}*/
 			case MODE_STRAFE:
 			{
+
+				EnemyWave surfWave = getClosestSurfableWave();
+				if(surfWave != null && this.getOthers() == 1)
+				{
+					return;
+				}
+
 				if(hitRobot)
 				{
 					if(this.getDistanceRemaining() == 0)
@@ -500,50 +500,55 @@ public class BobTheBuilder extends AdvancedRobot
 		}
 		else
 		{
-			// double firePower = Math.min(500 / enemy.getDistance(), 3);
-			// double bulletSpeed = 20 - firePower * 3;
-			// int time = (int) Math.ceil((enemy.getDistance() / bulletSpeed));
-			//
-			// double absoluteDegree = absoluteBearing(this.getX(), this.getY(), enemy.getFutureX(time), enemy.getFutureY(time));
-			//
-			// this.setTurnGunRight(normalizeBearing(absoluteDegree - getGunHeading()));
-			//
-			// if(this.getGunHeat() == 0 && Math.abs(this.getGunTurnRemaining()) < 10)
-			// {
-			// 	this.setFire(firePower);
-			// }
-
-			double absoluteBearing = enemy.getBearingRadians() + this.getHeadingRadians();
-			if(enemy.getVelocity() != 0)
+			if(this.getOthers() > 1)
 			{
-				if(Math.sin(enemy.getHeadingRadians() - absoluteBearing) * enemy.getVelocity() < 0)
+				double firePower = Math.min(500 / enemy.getDistance(), 3);
+				double bulletSpeed = 20 - firePower * 3;
+				int time = (int) Math.ceil((enemy.getDistance() / bulletSpeed));
+
+				double absoluteDegree = Helpers.absoluteBearing(position, Helpers.project(position, enemy.getBearingRadians() + this.getHeadingRadians(), enemy.getDistance()));
+
+				this.setTurnGunRightRadians(Utils.normalRelativeAngle(absoluteDegree - this.getGunHeadingRadians()));
+
+				if(this.getGunHeat() == 0 && Math.abs(this.getGunTurnRemaining()) < 10)
 				{
-					enemyDirection = -1;
-				}
-				else
-				{
-					enemyDirection = 1;
+					this.setFire(firePower);
 				}
 			}
-
-			if(enemy.getEnergy() <= 0) // Enemy is disabled, just shoot at their current location
+			else
 			{
-				this.setTurnGunRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians()));
-				this.setFire(0.1);
-				return;
-			}
+				double absoluteBearing = enemy.getBearingRadians() + this.getHeadingRadians();
+				if(enemy.getVelocity() != 0)
+				{
+					if(Math.sin(enemy.getHeadingRadians() - absoluteBearing) * enemy.getVelocity() < 0)
+					{
+						enemyDirection = -1;
+					}
+					else
+					{
+						enemyDirection = 1;
+					}
+				}
 
-			double power = Math.min(500 / enemy.getDistance(), Rules.MAX_BULLET_POWER);
-			BulletWave wave = new BulletWave(this, enemy, position, absoluteBearing, power, enemyDirection);
-			BulletWave.enemyPosition = Helpers.project(position, absoluteBearing, enemy.getDistance());
+				if(enemy.getEnergy() <= 0) // Enemy is disabled, just shoot at their current location
+				{
+					this.setTurnGunRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians()));
+					this.setFire(0.1);
+					return;
+				}
 
-			double radians = Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians() + wave.mostVisitedBearingOffset());
-			this.setTurnGunRightRadians(radians);
-			this.setFire(power);
+				double power = Math.min(500 / enemy.getDistance(), Rules.MAX_BULLET_POWER);
+				BulletWave wave = new BulletWave(this, enemy, position, absoluteBearing, power, enemyDirection);
+				BulletWave.enemyPosition = Helpers.project(position, absoluteBearing, enemy.getDistance());
 
-			if(this.getEnergy() >= power)
-			{
-				this.addCustomEvent(wave);
+				double radians = Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians() + wave.mostVisitedBearingOffset());
+				this.setTurnGunRightRadians(radians);
+				this.setFire(power);
+
+				if(this.getEnergy() >= power)
+				{
+					this.addCustomEvent(wave);
+				}
 			}
 		}
 	}
@@ -558,7 +563,8 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		EnemyWave surfWave = getClosestSurfableWave();
 
-		if(surfWave == null)
+		// Only surf if we have a wave and there's only one enemy left and we're not trying to ram/track
+		if(surfWave == null || this.getOthers() > 1 || mode == RobotModes.MODE_RAM || mode == RobotModes.MODE_TRACK)
 		{
 			return;
 		}
@@ -723,7 +729,7 @@ public class BobTheBuilder extends AdvancedRobot
 	 * @param angle The angle that the robot would have traveled in without any wall smoothing
 	 * @param direction 1 for clockwise rotation, -1 for counterclockwise rotation
 	 *
-	 * @returns The new angle based on how much wall smoothing is needed
+	 * @return The new angle based on how much wall smoothing is needed
 	 *
 	 * @author Voidious
 	 */
@@ -751,7 +757,7 @@ public class BobTheBuilder extends AdvancedRobot
 				angle = ((int) ((angle + Math.PI / 2) / Math.PI)) * Math.PI;
 				distance = Math.abs(wallDistanceY);
 			}
-			else if (testDistanceX < 0 && testDistanceX <= testDistanceY) // Too close to the east/west wall
+			else if(testDistanceX < 0 && testDistanceX <= testDistanceY) // Too close to the east/west wall
 			{
 				angle = (((int) (angle / Math.PI)) * Math.PI) + Math.PI / 2;
 				distance = Math.abs(wallDistanceX);
