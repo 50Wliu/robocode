@@ -209,7 +209,7 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		System.out.println("Wall hit at (" + getX() + ", " + getY() + "); bearing was " + e.getBearingRadians() + " rads");
 		// Move immediately so that we don't generate more HitWallEvents while turning
-		if(e.getBearingRadians() > -Math.PI / 2 && e.getBearingRadians() <= Math.PI / 2)
+		if(Math.abs(e.getBearingRadians()) <= Math.PI / 2)
 		{
 			this.back(10);
 		}
