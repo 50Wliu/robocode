@@ -6,5 +6,5 @@ robot.database
 battles/intro.battle
 battles/sample.battle
 
-!bobthebuilder/
-bobthebuilder/*.class
+!exam2016/
+exam2016/*.class
