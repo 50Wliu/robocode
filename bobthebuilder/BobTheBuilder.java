@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 import java.awt.Color;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyEvent.*;
 import java.awt.geom.*;
 
 public class BobTheBuilder extends AdvancedRobot
@@ -29,19 +27,7 @@ public class BobTheBuilder extends AdvancedRobot
 	private int wallMargin = 50;
 	private boolean tooCloseToWall = false;
 	private boolean hitRobot = false;
-	private boolean lockMode = false;
 	private static Random rand = new Random();
-
-	private enum RobotModes
-	{
-		// MODE_ENCIRCLE,
-		MODE_STRAFE,
-		MODE_TRACK,
-		MODE_RAM,
-		MODE_MANUAL // Unimplemented
-	}
-
-	private RobotModes mode = RobotModes.MODE_STRAFE;
 
 	public void run()
 	{
@@ -74,7 +60,6 @@ public class BobTheBuilder extends AdvancedRobot
 		while(true)
 		{
 			this.setDebugProperty("version", VERSION);
-			this.setDebugProperty("mode", mode.toString());
 			if(this.getTime() - enemy.getLastUpdateTime() > 5)
 			{
 				// We have outdated data that really isn't going to help us
@@ -88,8 +73,9 @@ public class BobTheBuilder extends AdvancedRobot
 
 			position = new Point2D.Double(this.getX(), this.getY());
 
+			updateSurfWaves();
 			move();
-			// fire();
+			fire();
 			execute();
 		}
 	}
@@ -124,9 +110,6 @@ public class BobTheBuilder extends AdvancedRobot
 
 		enemyPosition = Helpers.project(position, absoluteBearing, e.getDistance());
 
-		updateSurfWaves();
-		surf();
-
 		enemies.get(e.getName()).setCachedEnergy(e.getEnergy());
 
 		if(enemy.none() // No enemy
@@ -135,14 +118,8 @@ public class BobTheBuilder extends AdvancedRobot
 		|| e.getDistance() < enemy.getDistance() - 70 // New robot is a lot closer than current enemy
 		|| e.getName().equals(enemy.getName())) // New robot is the current enemy
 		{
-			this.setDebugProperty("enemy", e.getName());
 			enemy = enemies.get(e.getName());
 
-			if(mode == RobotModes.MODE_TRACK || mode == RobotModes.MODE_RAM)
-			{
-				this.setTurnRightRadians(enemy.getBearingRadians());
-			}
-			fire();
 			enemy.setCachedVelocity(enemy.getVelocity());
 
 			this.setTurnRadarRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getRadarHeadingRadians()) * 2);
@@ -246,63 +223,19 @@ public class BobTheBuilder extends AdvancedRobot
 	public void onHitRobot(HitRobotEvent e)
 	{
 		hitRobot = true;
-		if(mode != RobotModes.MODE_RAM)
+		// Move "backwards" a bit so that we don't get stuck
+		// TODO: Calculate the bearing to the wall even if we haven't hit a wall
+		if(tooCloseToWall && !this.getHitWallEvents().isEmpty())
 		{
-			// Move "backwards" a bit so that we don't get stuck
-			// TODO: Calculate the bearing to the wall even if we haven't hit a wall
-			if(tooCloseToWall && !this.getHitWallEvents().isEmpty())
-			{
-				this.turnRightRadians((this.getHitWallEvents().lastElement().getBearingRadians() + e.getBearingRadians()) / 2);
-			}
-			this.setAhead(e.getBearingRadians() > -Math.PI / 2 && e.getBearingRadians() <= Math.PI / 2 ? -100 : 100);
+			this.turnRightRadians((this.getHitWallEvents().lastElement().getBearingRadians() + e.getBearingRadians()) / 2);
 		}
-		else // Ram them!
-		{
-			this.setTurnRightRadians(e.getBearingRadians());
-			this.setAhead(40);
-		}
+		this.setAhead(e.getBearingRadians() > -Math.PI / 2 && e.getBearingRadians() <= Math.PI / 2 ? -100 : 100);
 
 		if(enemies.containsKey(e.getName()))
 		{
 			double cachedEnergy = enemies.get(e.getName()).getCachedEnergy();
 			enemies.get(e.getName()).setCachedEnergy(cachedEnergy - Rules.ROBOT_HIT_DAMAGE);
 			// TODO: Robots also gain Rules.ROBOT_HIT_BONUS on ramming?
-		}
-	}
-
-	public void onKeyPressed(KeyEvent e)
-	{
-		switch(e.getKeyCode())
-		{
-			// case KeyEvent.VK_BACK_QUOTE:
-			// {
-			// 	lockMode = true;
-			// 	mode = RobotModes.MODE_MANUAL;
-			// 	break;
-			// }
-			case KeyEvent.VK_1:
-			{
-				lockMode = true;
-				mode = RobotModes.MODE_STRAFE;
-				break;
-			}
-			case KeyEvent.VK_2:
-			{
-				lockMode = true;
-				mode = RobotModes.MODE_TRACK;
-				break;
-			}
-			case KeyEvent.VK_3:
-			{
-				lockMode = true;
-				mode = RobotModes.MODE_RAM;
-				break;
-			}
-			case KeyEvent.VK_ESCAPE:
-			{
-				lockMode = false;
-				break;
-			}
 		}
 	}
 
@@ -314,25 +247,7 @@ public class BobTheBuilder extends AdvancedRobot
 			enemy.reset();
 		}
 
-		// if(getOthers() >= 10)
-		// {
-		// 	mode = RobotModes.MODE_ENCIRCLE;
-		// }
-		/* else */if(this.getOthers() > 1)
-		{
-			if(!lockMode)
-			{
-				mode = RobotModes.MODE_STRAFE;
-			}
-		}
-		else if(this.getOthers() == 1)
-		{
-			if(!lockMode)
-			{
-				mode = RobotModes.MODE_TRACK;
-			}
-		}
-		else // Victory!
+		if(this.getOthers() == 0) // Victory!
 		{
 			this.setMaxVelocity(0);
 			for(int i = 0; i < 10; i++)
@@ -353,112 +268,51 @@ public class BobTheBuilder extends AdvancedRobot
 
 	private void move()
 	{
-		switch(mode)
+		EnemyWave surfWave = getClosestSurfableWave();
+		if(surfWave != null && this.getOthers() == 1) // Wave surfing
 		{
-			/*case MODE_ENCIRCLE:
+			double dangerLeft = checkDanger(surfWave, -1);
+			double dangerRight = checkDanger(surfWave, 1);
+
+			double goAngle = Helpers.absoluteBearing(surfWave.getFireLocation(), position);
+			if(dangerLeft < dangerRight)
 			{
-				if(tooCloseToWall)
-				{
-					if(!wallMovementHandled)
-					{
-						moveDirection *= -1;
-						wallMovementHandled = true;
-					}
-					setAhead(wallMargin * moveDirection);
-				}
-
-				if(hitRobot)
-				{
-					if(getDistanceRemaining() == 0)
-					{
-						hitRobot = false;
-					}
-					else
-					{
-						return;
-					}
-				}
-
-				setTurnRight(normalizeBearing(enemy.getBearing() + 90 - (15 * moveDirection)));
-
-				if(!tooCloseToWall)
-				{
-					if(ThreadLocalRandom.current().nextInt(0, 51) == 50)
-					{
-						moveDirection *= -1;
-					}
-					setAhead(1000 * moveDirection);
-				}
-				break;
-			}*/
-			case MODE_STRAFE:
-			{
-
-				EnemyWave surfWave = getClosestSurfableWave();
-				if(surfWave != null && this.getOthers() == 1)
-				{
-					return;
-				}
-
-				if(hitRobot)
-				{
-					if(this.getDistanceRemaining() == 0)
-					{
-						hitRobot = false;
-					}
-					else
-					{
-						return;
-					}
-				}
-
-				// Strafe rather randomly
-				if(rand.nextInt(21) == 0)
-				{
-					moveDirection *= -1;
-				}
-
-				double heading = this.getHeadingRadians() + (moveDirection == 1 ? 0 : Math.PI);
-				double goAngle = enemy.getBearingRadians() + Math.PI / 2 - (Math.PI / 12 * moveDirection);
-				goAngle = Helpers.limit(-Rules.getTurnRateRadians(this.getVelocity()), goAngle, Rules.getTurnRateRadians(this.getVelocity()));
-				double wallSmoothingAngle = wallSmoothing(position, heading + goAngle, moveDirection);
-				this.setTurnRightRadians(Utils.normalRelativeAngle(wallSmoothingAngle - heading));
-
-				this.setAhead(100 * moveDirection);
-				break;
+				goAngle = wallSmoothing(position, goAngle - (Math.PI / 2), -1);
 			}
-			case MODE_TRACK:
+			else
 			{
-				if(enemy.getEnergy() < getEnergy() && !lockMode)
+				goAngle = wallSmoothing(position, goAngle + (Math.PI / 2), 1);
+			}
+
+			setBackAsFront(goAngle);
+		}
+		else // Random movement
+		{
+			if(hitRobot)
+			{
+				if(this.getDistanceRemaining() == 0)
 				{
-					// We have the advantage; ram them for extra points!
-					mode = RobotModes.MODE_RAM;
-					this.setAhead(enemy.getDistance() + 5);
-				}
-				else if(getEnergy() < 15 && enemy.getEnergy() > 10 && !lockMode)
-				{
-					// Not looking too good for us - go back to random movement
-					mode = RobotModes.MODE_STRAFE;
+					hitRobot = false;
 				}
 				else
 				{
-					this.setAhead(enemy.getDistance() - 50);
+					return;
 				}
-				break;
 			}
-			case MODE_RAM:
+
+			// Strafe rather randomly
+			if(rand.nextInt(21) == 0)
 			{
-				if(enemy.getEnergy() < getEnergy())
-				{
-					this.setAhead(enemy.getDistance() + 5);
-				}
-				else if(!lockMode) // Ruh roh
-				{
-					mode = RobotModes.MODE_TRACK;
-					this.setAhead(enemy.getDistance() - 50);
-				}
-				break;
+				moveDirection *= -1;
 			}
+
+			double heading = this.getHeadingRadians() + (moveDirection == 1 ? 0 : Math.PI);
+			double goAngle = enemy.getBearingRadians() + Math.PI / 2 - (Math.PI / 12 * moveDirection);
+			goAngle = Helpers.limit(-Rules.getTurnRateRadians(this.getVelocity()), goAngle, Rules.getTurnRateRadians(this.getVelocity()));
+			double wallSmoothingAngle = wallSmoothing(position, heading + goAngle, moveDirection);
+			this.setTurnRightRadians(Utils.normalRelativeAngle(wallSmoothingAngle - heading));
+
+			this.setAhead(100 * moveDirection);
 		}
 	}
 
@@ -469,86 +323,54 @@ public class BobTheBuilder extends AdvancedRobot
 			return;
 		}
 
-		if(mode == RobotModes.MODE_RAM && hitRobot)
+		if(this.getOthers() > 1) // Normal predictive firing
 		{
-			this.setTurnGunRightRadians(Utils.normalRelativeAngle(this.getHeadingRadians() - this.getGunHeadingRadians() + enemy.getBearingRadians()));
-			if(this.getGunHeat() == 0 && this.getGunTurnRemaining() < 10)
+			double firePower = Math.min(500 / enemy.getDistance(), 3);
+			double bulletSpeed = 20 - firePower * 3;
+			int time = (int) Math.ceil((enemy.getDistance() / bulletSpeed));
+
+			double absoluteDegree = Helpers.absoluteBearing(position, Helpers.project(position, enemy.getBearingRadians() + this.getHeadingRadians(), enemy.getDistance()));
+
+			this.setTurnGunRightRadians(Utils.normalRelativeAngle(absoluteDegree - this.getGunHeadingRadians()));
+
+			if(this.getGunHeat() == 0 && Math.abs(this.getGunTurnRemaining()) < 10)
 			{
-				// We get extra points if we kill them by ramming
-				// TODO: Make this more fluid and not a bunch of if/else statements
-				if(enemy.getEnergy() > 16)
-				{
-					this.setFire(3);
-				}
-				else if(enemy.getEnergy() > 10)
-				{
-					this.setFire(2);
-				}
-				else if(enemy.getEnergy() > 4)
-				{
-					this.setFire(1);
-				}
-				else if(enemy.getEnergy() > 0.5)
-				{
-					this.setFire(0.5);
-				}
-				else if(enemy.getEnergy() > 0.4)
-				{
-					this.setFire(0.1);
-				}
+				this.setFire(firePower);
 			}
 		}
-		else
+		else // Guess factor targeting
 		{
-			if(this.getOthers() > 1)
+			double absoluteBearing = enemy.getBearingRadians() + this.getHeadingRadians();
+			if(enemy.getVelocity() != 0)
 			{
-				double firePower = Math.min(500 / enemy.getDistance(), 3);
-				double bulletSpeed = 20 - firePower * 3;
-				int time = (int) Math.ceil((enemy.getDistance() / bulletSpeed));
-
-				double absoluteDegree = Helpers.absoluteBearing(position, Helpers.project(position, enemy.getBearingRadians() + this.getHeadingRadians(), enemy.getDistance()));
-
-				this.setTurnGunRightRadians(Utils.normalRelativeAngle(absoluteDegree - this.getGunHeadingRadians()));
-
-				if(this.getGunHeat() == 0 && Math.abs(this.getGunTurnRemaining()) < 10)
+				if(Math.sin(enemy.getHeadingRadians() - absoluteBearing) * enemy.getVelocity() < 0)
 				{
-					this.setFire(firePower);
+					enemyDirection = -1;
+				}
+				else
+				{
+					enemyDirection = 1;
 				}
 			}
-			else
+
+			if(enemy.getEnergy() <= 0) // Enemy is disabled, just shoot at their current location
 			{
-				double absoluteBearing = enemy.getBearingRadians() + this.getHeadingRadians();
-				if(enemy.getVelocity() != 0)
-				{
-					if(Math.sin(enemy.getHeadingRadians() - absoluteBearing) * enemy.getVelocity() < 0)
-					{
-						enemyDirection = -1;
-					}
-					else
-					{
-						enemyDirection = 1;
-					}
-				}
+				this.setTurnGunRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians()));
+				this.setFire(0.1);
+				return;
+			}
 
-				if(enemy.getEnergy() <= 0) // Enemy is disabled, just shoot at their current location
-				{
-					this.setTurnGunRightRadians(Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians()));
-					this.setFire(0.1);
-					return;
-				}
+			double power = Math.min(500 / enemy.getDistance(), Rules.MAX_BULLET_POWER);
+			BulletWave wave = new BulletWave(this, enemy, position, absoluteBearing, power, enemyDirection);
+			BulletWave.enemyPosition = Helpers.project(position, absoluteBearing, enemy.getDistance());
 
-				double power = Math.min(500 / enemy.getDistance(), Rules.MAX_BULLET_POWER);
-				BulletWave wave = new BulletWave(this, enemy, position, absoluteBearing, power, enemyDirection);
-				BulletWave.enemyPosition = Helpers.project(position, absoluteBearing, enemy.getDistance());
+			double radians = Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians() + wave.mostVisitedBearingOffset());
+			this.setTurnGunRightRadians(radians);
+			this.setFire(power);
 
-				double radians = Utils.normalRelativeAngle(absoluteBearing - this.getGunHeadingRadians() + wave.mostVisitedBearingOffset());
-				this.setTurnGunRightRadians(radians);
-				this.setFire(power);
-
-				if(this.getEnergy() >= power)
-				{
-					this.addCustomEvent(wave);
-				}
+			if(this.getEnergy() >= power)
+			{
+				this.addCustomEvent(wave);
 			}
 		}
 	}
@@ -557,32 +379,6 @@ public class BobTheBuilder extends AdvancedRobot
 	{
 		int index = getFactorIndex(surfWave, predictPosition(surfWave, direction));
 		return surfStats[index];
-	}
-
-	private void surf()
-	{
-		EnemyWave surfWave = getClosestSurfableWave();
-
-		// Only surf if we have a wave and there's only one enemy left and we're not trying to ram/track
-		if(surfWave == null || this.getOthers() > 1 || mode == RobotModes.MODE_RAM || mode == RobotModes.MODE_TRACK)
-		{
-			return;
-		}
-
-		double dangerLeft = checkDanger(surfWave, -1);
-		double dangerRight = checkDanger(surfWave, 1);
-
-		double goAngle = Helpers.absoluteBearing(surfWave.getFireLocation(), position);
-		if(dangerLeft < dangerRight)
-		{
-			goAngle = wallSmoothing(position, goAngle - (Math.PI / 2), -1);
-		}
-		else
-		{
-			goAngle = wallSmoothing(position, goAngle + (Math.PI / 2), 1);
-		}
-
-		setBackAsFront(goAngle);
 	}
 
 	private void updateSurfWaves()
