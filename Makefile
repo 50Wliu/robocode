@@ -45,11 +45,11 @@ test: rc/robots/BobTheBuilder.jar rc/libs/robocode.jar
 	@echo " == Results /battles/test3.battle $(time)  == " && \
 		cat tests/R$(time)_3.txt
 	awk 'BEGIN {FS=" "};NR==3{print $$2}' tests/R$(time)_1.txt | \
-		grep -q "bobthebuilder.BobTheBuilder"
+		grep -q "exam2016.BobTheBuilder"
 	awk 'BEGIN {FS=" "};NR==3{print $$2}' tests/R$(time)_2.txt | \
-		grep -q "bobthebuilder.BobTheBuilder"
+		grep -q "exam2016.BobTheBuilder"
 	awk 'BEGIN {FS=" "};NR==3{print $$2}' tests/R$(time)_3.txt | \
-		grep -q "bobthebuilder.BobTheBuilder"
+		grep -q "exam2016.BobTheBuilder"
 
 practicegui: rc/libs/robocode.jar rc/robots/BobTheBuilder.jar
 	cp BobTheBuilder.jar rc/robots/BobTheBuilder.jar
